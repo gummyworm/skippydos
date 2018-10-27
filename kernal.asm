@@ -11,8 +11,19 @@
 ; if this isn't defined, the kernal is assembled for PAL
 ;
 
+boot = $a000
+redraw=$a002
+
+RAMSTART = $2413
+VIRTUAL_SCREEN = $2000
+
 ; uncomment for NTSC
 NTSC = 1
+
+SCREEN_W = 40
+SCREEN_H = 23
+BITMAP = 1 ; 0
+DOUBLE_CHARS = 1 ; 0
 
         .setcpu "6502"
 
@@ -218,7 +229,7 @@ LE0F3:  jmp     LDBD4
 ;--------------------------------------
 BIOERROR:
 ;handle I/O error in BASIC
-; This routine is called whenever BASIC wishes to call one of the KERNAL 
+; This routine is called whenever BASIC wishes to call one of the KERNAL
 ; I/O routines. It is also used to handle I/O errors in BASIC.
 ;
 LE0F6:  cmp     #$F0
@@ -333,7 +344,7 @@ VERFYT:
 ; and prints the message OK or ?VERIFY error depending on the result of the test.
 ; LOAD reads the I/O status word for a possible ?LOAD error, then updates the
 ; pointers to text and variables, exiting via CLR.
-; 
+;
         lda     #$01		;flag verify
         bit     a:$A9		;mask, will execute lda #$01 if address $e168
         sta     $0A			;store in VRECK, LOAD/VERIFY flag
@@ -452,7 +463,7 @@ LE20A:  rts
 
 ;--------------------------------------
 CMMERR:
-;check for comma
+; check for comma
 ; This routine confirms that the next character in the text is a comma. It also
 ; test that the comma is not immediately followed by a terminator. If so, exit
 ; and do SYNTAX error.
@@ -685,7 +696,6 @@ LE35B:  .byte   $B7
         brk
         brk
 ;END OF ATN CONSTANT TABLE
-        
 
 ;--------------------------------------
 INIT:
@@ -695,12 +705,11 @@ INIT:
 ; is output, and BASIC is restarted.
 ;
 LE378:  jsr     LE480           ; initialize JiffyDOS commands and function keys
-        jsr     LE3A4           ; Initialize BASIC
+	jsr     LE3A4           ; Initialize BASIC
         jsr     LE404           ; output power-up message
         ldx     #$FB            ; reset stack
         txs
         jmp     LC474   ; BASIC_START           ; print READY, and restart BASIC
-
 
 ;--------------------------------------
 INITAT:
@@ -733,7 +742,7 @@ RNDSED:
         .byte   $C7
         .byte   $52
         cli
-        
+
 ;END OF RNDSEED
 ;--------------------------------------
 INITCZ:
@@ -755,14 +764,14 @@ LE3A6:  sta     $54
         sty     $06
         lda     #$AA            ; vector to D1AA
         ldy     #$D1
-        sta     $03     
+        sta     $03
         sty     $04             ; store in ADRAY1
         ldx     #$1C            ; copy the CHRGET and RNDSED to RAM
 LE3C4:  lda     LE387,x         ; source address
         sta     $73,x           ; destination address
         dex                     ; next byte
         bpl     LE3C4           ; til ready
-        lda     #$03     
+        lda     #$03
         sta     $53             ; store #3 in FOUR6, garbage collection
         lda     #$00
         sta     $68             ; init BITS, fac#1 overflow
@@ -820,11 +829,10 @@ LE404:  lda     $2B
 ;
 LE44F:  .word   $F7E6   ; IERROR vector, print BASIC error message
         .word   $C483   ; IMAIN vector, BASIC warm start
-        .word   $EAF2   ; ICRNCH vector, tokenize BASIC 
+        .word   $EAF2   ; ICRNCH vector, tokenize BASIC
         .word   $C71A   ; IQPLOP vector, list BASIC text
         .word   $C7E4   ; IGONE vector, BASIC character dispatch
-        .word   $CE86   ; IEVAL vector, evaluate BASIC token 
-
+        .word   $CE86   ; IEVAL vector, evaluate BASIC token
 
 ;--------------------------------------
 INIT_JIFFY_COMMANDS:
@@ -843,7 +851,8 @@ POWER_UP_MESSAGE:
 ;
 .byte " BYTES FREE",$0d,0
 POWER_UP_MESSAGE_TEXT:
-.byte " IFFYDOS 2012 CMD ETC",$0d,0
+;.byte " IFFYDOS 2012 CMD ETC",$0d,0
+.byte 1,"KIPPYDOS V1 BY BRYCE",$0d,0
 .res 8                  ; FREE
 
 ;--------------------------------------
@@ -863,9 +872,9 @@ LE467:  jsr     $FFCC           ; CLRCHN, close all I/O channels
         jsr     $C67A           ; do CLR
         cli                     ; enable IRQ
 BASIC_READY:
-        ldx     #$80            ; error code $80 
+        ldx     #$80            ; error code $80
         jmp     ($0300)         ; perform error, JiffyDOS @ JIFFY_IERROR
-IERROR_OLD:   
+IERROR_OLD:
 LE47E:  txa
         bmi     READY           ; larger than $80
         jmp     $C43A           ; nope, print error
@@ -874,10 +883,10 @@ READY:  jmp     $C474           ; print READY
 
 ;--------------------------------------
 INIT_JIFFY_COMMANDS_AND_FKEYS:
-; This routine initialises the JiffyDOS commands by jumping 
-; to $e453 where the $0300-vectors are set up. Then it sets 
-; up the vectors at $b0 to point to the funktionkey table. 
-; The entry at $e4c2 disables the funktionkeys after a @f 
+; This routine initialises the JiffyDOS commands by jumping
+; to $e453 where the $0300-vectors are set up. Then it sets
+; up the vectors at $b0 to point to the funktionkey table.
+; The entry at $e4c2 disables the funktionkeys after a @f
 ; command.
 ;
 LE480:  jsr     LE45B           ; init JiffyDOS command vectors
@@ -894,20 +903,17 @@ LE48F:  lda     #$6F            ; $6F=command channel
         cmp     #$35            ; equal to $35
         rts
 
-
-;.res 6                  ; FREE
-
 ;--------------------------------------
 BRING_SERIAL_DATA_LINE_HIGH:
-;bring the serial bus data line high. 
+;bring the serial bus data line high.
 ;routine
 ;
 LE4A0:  lda     $912C
         and     #$DF
         sta     $912C
         rts
-        
-;--------------------------------------       
+
+;--------------------------------------
 BRING_SERIAL_DATA_LINE_LOW:
 ;bring the serial bus data line low.
 ;
@@ -915,7 +921,7 @@ LE4A9:  lda     $912C
         ora     #$20
         sta     $912C
         rts
-        
+
 ;--------------------------------------
 CHECK_SERIAL_STABLE:
 ;make sure the byte that is being read from $911F (serial port) is the same
@@ -927,7 +933,7 @@ LE4B2:  lda     $911F
         bne     LE4B2
         lsr     a
         rts
-		
+
 LE4C1:  txa
         bne     LE4CC
         lda     $C3
@@ -938,8 +944,8 @@ LE4CC:  jmp     LF66A
 
 ;--------------------------------------
 JIFFY_TEST_DEVICE:
-; The following routine tests if a device is present. On entry (X) 
-; holds the device to be tested. Open to the device is performed, 
+; The following routine tests if a device is present. On entry (X)
+; holds the device to be tested. Open to the device is performed,
 ; and afterwards the statusword can be read for result.
 ;
 LE4CF:  stx     $BA             ; store .X in FA
@@ -955,12 +961,29 @@ LE4D1:  tya
         ldx     $BA
         rts
 
-.res 21                     ; FREE
+;--------------------------------------
+BOOTLOAD2:
+	ldx #$08
+	ldy #$01
+	jsr $ffba	; SETLFS
 
+	lda #$00
+	jsr $ffd5	; LOAD
+	rts
+
+;--------------------------------------
+BASIC_COLDSTART:
+;
+	;jmp	(boot) ;BOOTLOAD	; load the boot program.
+	;jmp     $2400           ; start the boot program
+	jsr $a004
+        jmp     ($C000) 	; BASIC coldstart
+
+.res 2                  ; FREE
 
 ;--------------------------------------
 RS232_PATCH:
-;This patch has been added to the RS232 input routine in KERNAL v.3. 
+;This patch has been added to the RS232 input routine in KERNAL v.3.
 ;It initialises the RS232 parity byte, RIPRTY, on reception of a start bit.
         sta $a9                 ; RINONE, check for start bit
         lda #$01
@@ -974,7 +997,9 @@ RESET_CHARACTER_COLOR:
 ; and sets the character colour to COLOR.
 ;
         lda     $0286           ; get COLOR
-        sta     ($F3),y         ; and store in current screen position
+        ;sta     ($F3),y         ; and store in current screen position
+	nop
+	nop
         rts
 
 ;--------------------------------------
@@ -987,19 +1012,20 @@ LE500:  ldx     #$10
 
 ;--------------------------------------
 SCREEN:
-; returns the size of the screen.  columns-1 in .X, rows-1 in .Y
+; returns the size of the screen.  columns in .X, rows in .Y
 ;
-LE505:  ldx     #$16
-        ldy     #$17
+LE505:  ldx     #SCREEN_W
+        ldy     #SCREEN_H
         rts
 
 ;--------------------------------------
 PLOT:
 ;put/get row and column
+;
 LE50A:  bcs     LE513
 LE50C:  stx     $D6
         sty     $D3
-        jsr     SET_SCREEN_POINTERS 
+        jsr     SET_SCREEN_POINTERS
 LE513:  ldx     $D6
         ldy     $D3
         rts
@@ -1010,10 +1036,10 @@ CINIT1:
 ;This routine is part of the KERNAL CINT init routine. I/O default
 ; values are set, <shift+cbm> keys are disabled, and cursor is switched
 ; off. The vector to the keyboard table is set up, and the length of
-; the keyboardbuffer is set to 10 characters. The cursor color is set, 
+; the keyboardbuffer is set to 10 characters. The cursor color is set,
 ; and the key-repeat parameters are set up.
 ; VIC-20: the ROM charset seems to be enabled and the screen address set
-LE518:  jsr     LE5BB
+        jsr     LE5BB
         lda     $0288
         and     #$FD
         asl     a
@@ -1059,15 +1085,15 @@ LE55F:  lda     $0288           ; get HIBASE, top of screen memory
         tax
 LE568:  sty     $D9,x           ; store in screen line link table, LDTB1
         clc
-        adc     #$16            ; add screen width to next line  
+        adc     #SCREEN_W       ; add screen width to next line
         bcc     LE570
         iny                     ; inc page number
 LE570:  inx                     ; next
-        cpx     #$18            ; until all rows are done
+        cpx     #SCREEN_H+1     ; until all rows are done
         bne     LE568
         lda     #$FF
         sta     $D9,x           ; last pointer is $FF
-        ldx     #$16            ; start clear screen with line $16 (bottom line)
+	ldx     #SCREEN_H       ; start clear screen at the bottom row
 LE57B:  jsr     LEA8D           ; erase line .X
         dex                     ; next
         bpl     LE57B           ; until screen is empty
@@ -1089,28 +1115,29 @@ SET_SCREEN_POINTERS:
 ; been removed from the original commodore KERNAL. It sometimes caused
 ; the computer to crash, when deleting characters from the bottom line.
 ;
-LE587:  ldx     $D6             ; read TBLX
-        lda     $D3             ; read PNTR
-LE58B:  ldy     $D9,x           ; read value 
-        bmi     LE597           ; heavy calculations??? jump when ready
+LE587:  ldx     $D6             ; get row
+	lda     $D3             ; get column
+LE58B:  ldy     $D9,x           ; get logical line hi byte
+	bmi     LE597           ; continue if start of logical line
         clc
-        adc     #$16            ;
-        sta     $D3             ; PNTR
-        dex
-        bpl     LE58B
+	adc     #SCREEN_W       ; add one line length
+	sta     $D3             ; update cursor column
+	dex			; decrement row
+	bpl     LE58B		; until $ff is found from line link table
+
 LE597:  jsr     SET_START_OF_LINE  ; set start of line .X
 
-        lda     #$15            ; 
+	lda     #SCREEN_W-1    	; set line length
         inx
 LE59D:  ldy     $D9,x           ; LDTB1
         bmi     LE5A2
         clc
-        adc     #$16            ; 
+	adc     #SCREEN_W	; add line length
         inx
         bpl     LE59D
-
 LE5A2:  sta     $D5             ; store in LMNX, physical screen line length
         jmp     SYNCHRONIZE_COLOR_POINTER       ; sync color pointer
+
 LE5A7:  cpx     $C9             ; read LXSP, check cursor at start of input
         beq     @0
 
@@ -1131,9 +1158,9 @@ LE5BB:  lda     #$03
         sta     $9A
         lda     #$00
         sta     $99
-		
+
 LE5C3:  ldx     #$10
-LE5C5:  lda     LEDE3,x
+LE5C5:  lda     VIC_SETUP_TABLE,x
         sta     $8FFF,x
         dex
         bne     LE5C5
@@ -1144,7 +1171,7 @@ LP2:
 ;get character from keyboard buffer
 ; It is assumed that there is at leaset one character in the keyboard
 ; buffer. This character is obtained and the rest of the queue is moved
-; up one by one to overwrite it. On exit, the character is in (A). 
+; up one by one to overwrite it. On exit, the character is in (A).
 ;
 LE5CF:  ldy     $0277
         ldx     #$00
@@ -1168,7 +1195,7 @@ INPUT_FROM_KEYBOARD:
 ; routine is encountered. The JSR at $e5e7 is o patch in JiffyDOS to
 ; test if the F-keys or other valid JiffyDOS keys are pressed. If not,
 ; this routine continues as normal.
-; 
+;
 LE5E5:  jsr     LE742           ; output to screen
 LE5E8:  lda     $C6             ; read NDX, number of characters in queue
         sta     $CC             ; BLNSW, cursor blink enable
@@ -1203,7 +1230,7 @@ LE621:  lda     ($D1),y         ; PNT, screen address
         bne     LE62A           ; nope
         dey
         bne     LE621           ; next
-LE62A:  iny                     
+LE62A:  iny
         sty     $C8             ; store in INDX, end of logical line for input;
         ldy     #$00
         sty     $0292           ; AUTOD, auto scroll down
@@ -1262,7 +1289,7 @@ LE691:  lda     #$00
         ldx     $99     ; DFLTN, default input device
         cpx     #$03    ;screen?
         beq     LE6A3   ; yes
-        ldx     $9A     
+        ldx     $9A
         cpx     #$03
         beq     LE6A6
 LE6A3:  jsr     LE742   ; output to screen
@@ -1301,7 +1328,7 @@ DISK_TALK:
         pha
         lda     #$00
         sta     $90     ; IECSTAT
-        
+
         lda     $BA     ; SY_DN
         jsr     JIF_TALK
         pla
@@ -1349,32 +1376,35 @@ LE6E4:  pla
 ;--------------------------------------
 ADVANCE_CURSOR:
 ;The cursor is advanced one position on the screen. If this puts it beyond
-; the 40th column, then it is placed at the beginning of the next line. If
-; the length of that line is less than 80, then this new line is linked to
+; the last column, then it is placed at the beginning of the next line. If
+; the length of that line is less than 88, then this new line is linked to
 ; the previous one. A space is opened if data already exists on the new line.
 ; If the cursor has reached the bottom of the screen, then the screen is
 ; scrolled down.
 ;
 LE6EA:  jsr     LE8FA
         inc     $D3
-        lda     $D5
-        cmp     $D3
-        bcs     LE72C
-        cmp     #$57
-        beq     LE723
-        lda     $0292
-        beq     LE701
-        jmp     LE9F0
-LE701:  ldx     $D6
-        cpx     #$17
-        bcc     LE70E
-        jsr     LE975
+	lda     $D5	; get current line length
+	cmp     $D3	; if >=
+	bcs     LE72C	; done
+	cmp     #SCREEN_W*2-1 ;#$57    ; last character of virtual line?
+	beq     LE723	; yes, go to next line
+
+	lda     $0292	; check autoscroll flag
+	beq     LE701	; if 0, scroll
+	jmp     LE9F0	; don't scroll, open a space on the screen
+LE701:  ldx     $D6	; check row
+	cpx     #SCREEN_H ; end of screen?
+	bcc     LE70E	; no, don't scroll
+	jsr     LE975	; end of screen - scroll down
         dec     $D6
         ldx     $D6
-LE70E:  asl     $D9,x
+
+LE70E:  asl     $D9,x	; clear hi bit of line link entry (line continues on next row)
         lsr     $D9,x
-        jmp     LED5B
-LE715:  adc     #$16
+	jmp     LED5B	; set hi-bit on next row (line now ends on the next row)
+
+LE715:  adc     #SCREEN_W ; update current screen line length
         sta     $D5
 
 ;--------------------------------------
@@ -1383,15 +1413,15 @@ RETREAT_CURSOR:
 ; set. The rest of the routine sets the cursor onto the next line for
 ; the previous routine.
 ;
-LE719:  lda     $D9,x
+LE719:  lda     $D9,x	; end of table?
         bmi     LE720
-        dex
+	dex		; no, keep searching
         bne     LE719
-LE720:  jmp     LEA7E
-LE723:  dec     $D6
-        jsr     LE8C3
+LE720:  jmp     LEA7E	; set start of line
+LE723:  dec     $D6	; update screen row position
+	jsr     LE8C3   ; go to the next line
         lda     #$00
-        sta     $D3
+	sta     $D3	; reset cursor column to 0
 LE72C:  rts
 
 ;--------------------------------------
@@ -1434,7 +1464,7 @@ LE742:  pha                     ; store .A, .X, and .Y on the stack
         sta     $D0             ; store in CRSW
         ldy     $D3             ; PNTR, cursor positions on line
         lda     $D7             ; retrieve from temp store
-        bpl     LE756           ; do unshifted characters 
+        bpl     LE756           ; do unshifted characters
         jmp     SHIFTED_CHARACTERS    ; do shifted characters
 
 ;UNSHIFTED CHARACTERS
@@ -1476,14 +1506,18 @@ LE78E:  iny                     ; copy character at cursor position .Y+1 to .Y
         iny
         lda     ($F3),y         ; move color back as well
         dey
-        sta     ($F3),y
+        ;sta     ($F3),y
+	nop
+	nop
         iny                     ; more characters to move
         cpy     $D5             ; compare with LNMx, length of physical screen line
         bne     LE78E           ; if not equal, move more characters
 LE79F:  lda     #$20
         sta     ($D1),y         ; store <SPACE> at end of line
         lda     $0286           ; COLOR, current character color
-        sta     ($F3),y         ; store color at end of line
+        ;sta     ($F3),y         ; store color at end of line
+	nop
+	nop
         bpl     LE7F7           ; always jmp
 LE7AA:  ldx     $D4             ; QTSW, editor in quotes mode
         beq     LE7B1           ; no
@@ -1499,7 +1533,7 @@ LE7BE:  cmp     #$1D            ; <CRSR RIGHT>?
         iny                     ; increment .Y, internal counter for column
         jsr     LE8FA           ; check line increment
         sty     $D3             ; store .Y in PNTR
-        dey                     ; decrement .Y 
+        dey                     ; decrement .Y
         cpy     $D5             ; and compare to LNMX
         bcc     LE7D6           ; not exceeded line length
         dec     $D6             ; TBLX, current physical line number
@@ -1511,17 +1545,19 @@ LE7D9:  cmp     #$11            ; <CRSR DOWN>?
         bne     LE7FA           ; no
         clc                     ; prepare for add
         tya                     ; .Y holds cursor column
-        adc     #$16            ; add screen w
+        adc     #SCREEN_W       ; add screen w
         tay                     ; to .Y
         inc     $D6             ; increment TBLX, physical line number
         cmp     $D5             ; compare to LNMX
         bcc     LE7D4           ; finish screen print
         beq     LE7D4           ; finish screen print
-        dec     $D6             ; restore TBLX
-LE7EC:  sbc     #$16            ;
+
+	dec     $D6             ; restore cursor row
+LE7EC:  sbc     #SCREEN_W
         bcc     LE7F4
-        sta     $D3             ; store PNTR
-        bne     LE7EC
+	sta     $D3             ; store cursor column
+	bne     LE7EC		; loop if not at start of the line
+
 LE7F4:  jsr     LE8C3           ; go to next line
 LE7F7:  jmp     LE6DC           ; finish screen print
 LE7FA:  jsr     LE912           ; set color code
@@ -1530,8 +1566,21 @@ LE7FA:  jsr     LE912           ; set color code
 LE800:  jsr     LC533           ;rechain BASIC lines this had to be moved here
         jmp     LC677
 
+;--------------------------------------
+BOOTFILE_LEN = 1
+BOOTFILE: .byte "0"
 
-        .res    15              ; FREE
+;--------------------------------------
+BOOTLOAD:
+	ldx #<BOOTFILE
+	ldy #>BOOTFILE
+	lda #BOOTFILE_LEN
+	jsr boot
+	rts
+	;jsr $ffbd	; SETNAM
+	jmp BOOTLOAD2
+
+.res 1                  ; FREE
 
 ;--------------------------------------
 JIFFY_X_COMMAND:
@@ -1580,14 +1629,20 @@ LE851:  dey                     ; prepare for move
         dey
         lda     ($F3),y         ; read character color
         iny
-        sta     ($F3),y         ; move one step to the right
+	;sta     ($F3),y         ; move one step to the right
+	nop
+	nop
+
         dey                     ; decrement counter
         cpy     $D3             ; compare with PNTR
         bne     LE851           ; til all characters right of cursror are moved
         lda     #$20            ; <SPACE>, ASCII $20
         sta     ($D1),y         ; store at new character position
         lda     $0286           ; COLOR, current character color
-        sta     ($F3),y         ; store at new color position
+        ;sta     ($F3),y         ; store at new color position
+	nop
+	nop
+
         inc     $D8             ; INSRT FLAG
 LE86D:  jmp     LE6DC           ; finish screen print
 LE870:  ldx     $D8             ; INSRT FLAG
@@ -1601,7 +1656,7 @@ LE879:  cmp     #$11            ; <CRSR UP>?
         dec     $D6             ; else decrement TBLX
         lda     $D3             ; PNTR
         sec                     ; prepare for subtract
-        sbc     #$16            ; back screen w/ columns 
+        sbc     #SCREEN_W       ; back screen w/ columns
         bcc     LE88E           ; skip
         sta     $D3             ; store PNTR
         bpl     LE8B8           ; finish screen print
@@ -1635,15 +1690,16 @@ GO_TO_NEXT_LINE:
 ; involves moving down two lines for a linked line. If this places the
 ; cursor below the bottom of the screen, then the screen is scrolled.
 ;
-LE8C3:  lsr     $C9             ;LXSP, cursor X-Y position 
-        ldx     $D6             ; TBLX, current line number
+; TODO: string too long
+LE8C3:  lsr     $C9             ; shift cursor row
+	ldx     $D6             ; get cursor row
 LE8C7:  inx                     ; next line
-        cpx     #$17            ;
+	cpx     #SCREEN_H+1	; last row?
         bne     LE8CF           ; nope, scroll not needed
         jsr     LE975           ; scroll down
 LE8CF:  lda     $D9,x           ; test LTDB1, screen line link table if first of two
         bpl     LE8C7           ; yes, jump down another line
-        stx     $D6             ; store in TBLX
+	stx     $D6             ; store updated cursor row
         jmp     LE587           ; set screen pointers
 
 ;--------------------------------------
@@ -1670,7 +1726,7 @@ LE8E8:  ldx     #$04
 LE8EC:  cmp     $D3
         beq     LE8F7
         clc
-        adc     #$16
+        adc     #SCREEN_W
         dex
         bne     LE8EC
         rts
@@ -1683,16 +1739,16 @@ CHECK_LINE_INCREMENT:
 ; routine places the cursor at the start of the line below.
 ;
 LE8FA:  ldx     #$04
-        lda     #$15
+        lda     #SCREEN_W-1
 LE8FE:  cmp     $D3
         beq     LE909
         clc
-        adc     #$16
+        adc     #SCREEN_W
         dex
         bne     LE8FE
         rts
 LE909:  ldx     $D6
-        cpx     #$17
+        cpx     #SCREEN_H
         beq     LE911
         inc     $D6
 LE911:  rts
@@ -1778,12 +1834,12 @@ LE921:  .byte   $90             ; black
 
 ;--------------------------------------
 SCROLL_SCREEN:
-;This routine scrolls the screen down by one line. If the top 
-;two lines are linked togeather, then the scroll down is repeated. 
-;The screen line link pointers are updated, each screen line is 
-;cleared and the line below is moved up. The keyboard is directly 
-;read from CIA#1, and the routine tests if <CTRL> is pressed. A 
-;JiffyDOS feature is the <CTRL S> option, which freezes the scroll 
+;This routine scrolls the screen down by one line. If the top
+;two lines are linked togeather, then the scroll down is repeated.
+;The screen line link pointers are updated, each screen line is
+;cleared and the line below is moved up. The keyboard is directly
+;read from CIA#1, and the routine tests if <CTRL> is pressed. A
+;JiffyDOS feature is the <CTRL S> option, which freezes the scroll
 ;till another key is pressed.
 ;
 LE975:  lda     $AC         ;temp store SAL on stack
@@ -1794,38 +1850,41 @@ LE975:  lda     $AC         ;temp store SAL on stack
         pha
         lda     $AF
         pha
+
 LE981:  ldx     #$FF
-        dec     $D6         ;decrement TBLX
-        dec     $C9         ;decrement LXSP
-        dec     $F2         ;temp store for line index
-LE989:  inx
-        jsr     LEA7E       ;set start of line (.X)
-        cpx     #$16
-        bcs     LE99D
+	dec     $D6         ; decrement cursor row
+	dec     $C9         ; decrement input cursor row
+        dec     $F2         ; temp store for line index
+
+LE989:  inx                 ; increment line number
+        jsr     LEA7E       ; set start of line (.X)
+	cpx     #SCREEN_H-1 ; last line?
+	bcs     LE99D       ; yes, break
+
         lda     LEDFE,x     ;read low-byte screen address
         sta     $AC
-        lda     $DA,x
-        jsr     LEA56       ;move a screen line
-        bmi     LE989
+        lda     $D9+1,x
+        jsr     LEA56       ; move a screen line
+	bmi     LE989       ; repeat until we've done all rows
+
 LE99D:  jsr     LEA8D       ;clear a screen line
         ldx     #$00
 LE9A2:  lda     $D9,x       ;calculate new screen line link table
         and     #$7F        ;clear bit 7
-        ldy     $DA,x
+        ldy     $D9+1,x
         bpl     LE9AC
         ora     #$80        ;set bit 7
 LE9AC:  sta     $D9,x       ;store new value in table
         inx                 ;next line
-        cpx     #$16        ;til all 22 are done 
+	cpx     #SCREEN_H-1 ;til all rows are done
         bne     LE9A2
-        lda     $EF         ;bottom line link
-        ora     #$80        ;unlink it
-        sta     $EF         ;and store back
+        lda     $D9+SCREEN_H-1 ;bottom line link
+	ora     #$80        ;mark as start of logical line
+	sta     $D9+SCREEN_H-1 ;and store back
         lda     $D9         ;test top line link
         bpl     LE981       ;line is linked, scroll again
 LE9BD:  inc     $D6         ;increment TBLX
-        inc     $F2 
-
+        inc     $F2
 
 ;TODO: stop scrolling on <CTRL>+<S> not working properly CRITICAL
 LE9C1:  sei
@@ -1836,7 +1895,7 @@ LE9C2:  jsr     SCAN_KEYBOARD
         bne     LE9DF       ;<CTRL> not pressed? then we're done
         ldx     $C6         ;NDX, number of characters in keyboard buffer
         beq     LE9C2       ;as long as <CTRL> is pressed, freeze scroll
-        
+
         lda     $0276,x     ;read character from keyboard buffer
         sbc     #$53        ;subtract $13, "S"
         bne     LE9DF       ;nope, did not press "S"
@@ -1871,8 +1930,8 @@ LE9F0:  inx                         ; test next
         lda     $D9,x               ; LDTB1, screen line link table
         bpl     LE9F0
         stx     $F2                 ; temp line for index
-        cpx     #$16                ; bottom of screen
-        beq     LEA08               ; yes
+	cpx     #SCREEN_W           ; compare to last line
+	beq     LEA08               ; this is the last line
         bcc     LEA08               ; above bottom line
         jsr     LE975               ; scroll screen down
         ldx     $F2                 ; temp line for index
@@ -1887,7 +1946,7 @@ LEA08:  lda     $AC                 ; push SAL, scrolling pointer
         pha
         lda     $AF
         pha
-        ldx     #$17
+        ldx     #SCREEN_W+1
 LEA16:  dex
         jsr     LEA7E               ; set start of line
         cpx     $F2                 ; temp line for index
@@ -1899,7 +1958,7 @@ LEA16:  dex
         jsr     LEA56               ; move screen line
         bmi     LEA16
 LEA2C:  jsr     LEA8D               ; clear screen line
-        ldx     #$15                ; fix screen line link table
+        ldx     #SCREEN_H-2         ; fix screen line link table
 LEA31:  cpx     $F2                 ; temp line for index
         bcc     LEA44
         lda     $DA,x               ; LDTB1+1
@@ -1912,7 +1971,7 @@ LEA3F:  sta     $DA,x
         bne     LEA31               ; til line zero
 LEA44:  ldx     $F2                 ; temp line for index
         jsr     LE70E               ; adjust link table
-        pla 
+        pla
         sta     $AF
         pla                         ; EAL, end of program
         sta     $AE
@@ -1932,13 +1991,16 @@ LEA56:  and     #$03
         ora     $0288               ; HIBASE, top of screen page
         sta     $AD                 ; store >SAL, screen scroll pointer
         jsr     LEA6E               ; synchronize color transfer
-LEA60:  ldy     #$15                ; offset for character on screen line
+LEA60:  ldy     #SCREEN_W           ; offset for character on screen line
 LEA62:  lda     ($AC),y             ; move screen character
         sta     ($D1),y
         lda     ($AE),y             ; move character color
-        sta     ($F3),y
+        ;sta     ($F3),y
+	nop
+	nop
+
         dey                         ; next character
-        bpl     LEA62               ; til all 22 are done
+	bpl     LEA62               ; til all characters in row are done
         rts
 
 ;--------------------------------------
@@ -1975,7 +2037,7 @@ CLEAR_SCREENLINE:
 ; with ASCII spaces. The corresponding line of colour RAM is also cleared to
 ; the value held in COLOR.
 ;
-LEA8D:  ldy     #$15            ;
+LEA8D:  ldy     #SCREEN_W-1
         jsr     SET_START_OF_LINE
         jsr     SYNCHRONIZE_COLOR_POINTER
 LEA95:  jsr     RESET_CHARACTER_COLOR           ; reset character color to COLOR
@@ -2000,8 +2062,9 @@ LEAA1:  tay
 LEAAA:  ldy     $D3
         sta     ($D1),y
         txa
-        sta     ($F3),y
-        rts
+        ;sta     ($F3),y
+        ;rts
+	jmp (redraw)
 
 ;--------------------------------------
 SYNCHRONIZE_COLOR_POINTER:
@@ -2009,12 +2072,12 @@ SYNCHRONIZE_COLOR_POINTER:
 ; line address. This is done by reading the current screen line address and
 ; modefying it to colour RAM pointers and write it to USER at $f3/$f4
 ;
-LEAB2:  lda     $D1
-        sta     $F3
-        lda     $D2
+LEAB2:  lda     $D1	; get screen line LSB
+	sta     $F3	; set LSB of color pointer
+	lda     $D1+1	; get MSB of screen line
         and     #$03
         ora     #$94
-        sta     $F4
+	sta     $F4	; set color pointer MSB
         rts
 
 ;--------------------------------------
@@ -2025,8 +2088,8 @@ MAIN_IRQ_ENTRY_POINT:
 ; is updated (if it is enabled, BLNSW). The blink counter, BLNCT, is
 ; decremented. When this reaches zero, the cursor is toggled (blink on/off).
 ; Finally it scans the keyboard. The processor registers are then restored on
-; exit. 
-;Area from $ea64 to $ea7b has been changed in the JiffyDOS system. 
+; exit.
+;Area from $ea64 to $ea7b has been changed in the JiffyDOS system.
 ;Some routintes to handle the casetterecorder has been removed.
 ;
         jsr     LFFEA           ; update realtime clock, UDTIM
@@ -2058,7 +2121,7 @@ JIFFY_CRNCH:
 ;
 LEAF2:  pla                     ; get last stack entry
         pha                     ; put it back
-        cmp     #$98            ; equal to $98? 
+        cmp     #$98            ; equal to $98?
         beq     @1              ; yep, do JiffyDOS CRNCH
 @0:     jmp     $C57C           ; do original CRNCH
 @1:     jsr     TEST_JIFFY_COMMAND ; test if key in buffer is a JiffyDOS command
@@ -2096,7 +2159,7 @@ LEB1E:  lda     #$00
         sty     $CB
         sta     $9120           ; store in keyboard write register
         ldx     $9121           ; keyboard read register
-        cpx     #$FF            ; no key pressed 
+        cpx     #$FF            ; no key pressed
         beq     LEB8F           ; skip
         lda     #$FE
         sta     $9120
@@ -2139,7 +2202,7 @@ PROCESS_KEY_IMAGE:
 ; tests the RPTFLG if the key shall repeat. The new key is stored in the
 ; keyboard buffer, and all pointers are uppdated.
 ;
-LEB71:  jmp     (L028F)         ; jump through KEYLOG vector, points to $EBDC 
+LEB71:  jmp     (L028F)         ; jump through KEYLOG vector, points to $EBDC
 LEB74:  ldy     $CB             ; SFDX, number of the key we pressed
         lda     ($F5),y         ; get ASCII value from decode table
         tax                     ; temp store
@@ -2208,7 +2271,7 @@ LEBDC:  lda     $028D           ; SHFLAG
         nop
         lda     $9005           ; get current charset
         eor     #$02            ; toggle upper/lower case
-        sta     $9005           ; store 
+        sta     $9005           ; store
         nop
         nop
         nop
@@ -2218,7 +2281,7 @@ LEC0F:  asl     a
         cmp     #$08            ; test <CTRL>
         bcc     @0              ; nope
         lda     #$06            ; set offset for ctrl
-@0:     tax                     ; to .X 
+@0:     tax                     ; to .X
         lda     LEC46,x         ; read keyboard select vectors, low byte
         sta     $F5             ; store in KEYTAB, decode table vector
         lda     LEC46+1,x       ; read keyboard select vectors, hi byte
@@ -2231,7 +2294,7 @@ LEC18:  nop
         nop
         nop
 
-;-------------------------------------- 
+;--------------------------------------
 ;JIFFY_SCREEN_DUMP (from FXXX something)
 ;LEC1C:  lda     #$04            ; printer device #4
 ;        jsr     LFFB1           ; send LISTEN to device #4
@@ -2242,7 +2305,7 @@ LEC18:  nop
 ;@0:     ora     #$60            ; set SA=$60
 ;        jsr     LFF93           ; send SA after LISTEN
 ;        lda     $D3             ; PNTR, cursor column
-;        pha 
+;        pha
                             ; save
 ;        lda     $D6             ; TBLX, cursor line
 ;        pha                     ; save
@@ -2250,13 +2313,13 @@ LEC18:  nop
 
 
 
-        
+
         .res 7
 
 ;------------------------------------
 CHECK_STOP_KEY:
 ; before checking if the STOP key is pressed, ensure that the caller of the STOP
-; key wasn't from the BASIC DISC list. If the BASIC DISC list function were to 
+; key wasn't from the BASIC DISC list. If the BASIC DISC list function were to
 ; directly check for STOP during that routine it would exit prematurely.
 ;
 LE4E3:  txa                 ; save .X
@@ -2291,15 +2354,10 @@ LEC46:  .word   $EC5E           ; unshifted decode table
         .word   $EC9F           ; Shifted decode table
         .word   $ECE0           ; CBM decode table
         .word   $ED69           ; CTRL decode table
-        ;.byte   $A3
-        ;sbc     LEC5E
-        ;.byte   $9F
-        ;cpx     LED69
-        ;.byte   $A3
-        ;sbc     LED21
+
 ;--------------------------------------
 JIFFY_BYTE_IN:
-; reconstruct the byte from the bits that were read into the form that it 
+; reconstruct the byte from the bits that were read into the form that it
 ; will be used in.  This is done by putting the contents of $B3 into the
 ; low nybble of $B3, and $C0 into the high nybble.
 ; basically: $B3 = ($B3 & 0x0f) | ($C0 << 4)
@@ -2320,7 +2378,7 @@ LEC5C:  rts
 ; This is the first of four keybboard decode tables. The ASCII code for
 ; the key pressed is at the intersection of the row (written to $dc00)
 ; and the column (read from $dc01). The matrix values are shown below.
-; Note that left and right shift keys are seperated. 
+; Note that left and right shift keys are seperated.
 ;
 LEC5E:  .byte   $ED
         .word   $3331
@@ -2482,9 +2540,10 @@ LED4D:  cmp     #$09
         and     $0291
         sta     $0291
         bpl     LED3C
+
 LED5B:  inx
         lda     $D9,x
-        ora     #$80
+	ora     #$80	; set hi bit of line link entry (end of line is on this row)
         sta     $D9,x
         dex
         lda     $D5
@@ -2496,14 +2555,14 @@ LED5B:  inx
 ; This is the last keyboard decode table. The ASCII code for the key pressed
 ; is at the intersection of the row (written to $dc00) and the column
 ; (read from $dc01). The matrix values are shown below.
-; A few special funktion are found in this table ie. 
+; A few special funktion are found in this table ie.
 ; <ctrl H> - disables the upper/lower case switch
 ; <ctrl I> - enables the upper/lower case switch
 ; <ctrl S> - homes the cursor
 ; <ctrl T> - delets character
 ; Note that the italic keys only represent a ASCII code, and not a CBM character.
 ; Future implementations: Change some of the $ff values which represents 'no key'
-; to a valid ASCII code. ESC ($1b) and why not use the F-keys for something useful. 
+; to a valid ASCII code. ESC ($1b) and why not use the F-keys for something useful.
 ;
 LED69:  .byte   $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
         .byte   $FF
@@ -2552,86 +2611,56 @@ LED8D:  .byte   $FF
         .byte   $12
         .byte   $FF
 
-
-        .byte   0       ;FREE
-
-;--------------------------------------
-; JIFFY_SCREENDUMP continue #2
-; in another free area to be original
-;LEDAA:  ldy     #$00            ; column counter
-;        sty     $D4             ; clear quotes mode by writing 0 into QTSW
-;        jsr     LE50C           ; PLOT, put row and column
-;        inc     $D5             ; increment LNMX, maximum screen length
-;LEDB3:  jsr     LF221           ; input from screen
-;        jsr     LEEE4           ; CIOUT, send data to serial bus (printer)
-;        cmp     #$0D            ; carriage return
-;        bne     LEDB3           ; next char
-;        inx                     ; increment .X, line #
-;        cpx     #$17            ; til all rows are done. 
-;        bcs     LEDC9           ; exit
-;        asl     $D5             
-;        bpl     LEDAA           ; next line
-;        inx
-;        bne     LEDAA           ; next line
-;LEDC9:  jsr     LFFAE           ; UNLISTEN
-;        pla                     ; restore .X and .Y
-;        tax
-;        pla
-;        tay
-;        jsr     LE50C           ; PLOT, restore cursor position
-;        pla                     ; return to original GETCHAR routine with keycode in .A
-;LEDD5:  rts
-
-.res 57-25-16
+.res 17	; FREE
 
 ;--------------------------------------
 DO_CHECK_UNEXPANDED_POINTERS:
 ;
-    ldx #$00
+	ldx #$00
 	jsr INIT_VIA_DDA_AND_DDB    ; INIT VIA's for keyboard reading
 	jsr SCAN_CONTROL            ; is control pressed?
 	beq @0
-	jmp EXPANDED				;key not pressed, run as expanded
-@0:	jmp UNEXPANDED				;key pressed, run with unexpanded pointers
-	
+	jmp EXPANDED		;key not pressed, run as expanded
+@0:	jmp UNEXPANDED		;key pressed, run with unexpanded pointers
+
 ;--------------------------------------
 CHECK_AUTOSTART:
-;	
-    stx $9123					;set data direction for PORTB to input (.X contains 0)
-	lda #$ff					;set data direction for PORTA to output
-	sta $9122		
+;
+   	stx $9123		;set data direction for PORTB to input (.X contains 0)
+	lda #$ff		;set data direction for PORTA to output
+	sta $9122
 	lda #$df
-	sta $9120					;keyboard column scan
-	lda $9121					;get row scan
-	lsr							;Commodore key is bit 0
-	bcc @1  					;if bit 0 wasn't set, C= key is pressed, don't start
-	pla							;get rid of return address
+	sta $9120		;keyboard column scan
+	lda $9121		;get row scan
+	lsr			;Commodore key is bit 0
+	bcc @1  		;if bit 0 wasn't set, C= key is pressed, don't start
+	pla			;get rid of return address
 	pla
-@0:	jmp ($a000)					;start cartridge
-@1: rts
+@0:	jmp ($a000)		;start cartridge
+@1: 	rts
 
 ;--------------------------------------
 VIC_SETUP_TABLE:
 ; a table of initial values for the VIC chip at start up
-LEDE3:  .byte   $FF
+.byte   $FF
 
 ;horizontal centering
 .IFDEF NTSC
-        .byte   $05 
+        .byte   $07
 .ELSE
         .byte   $0C
 .ENDIF
 
 ;vertical centering
 .IFDEF NTSC
-        .byte   $19
+        .byte   $17
 .ELSE
         .byte   $26
 .ENDIF
-        .byte   $16             ; # of columns
-        .byte   $2E             ; # of rows
+        .byte   SCREEN_W >> BITMAP      ; # of columns
+	.byte   ((SCREEN_H+1)>> BITMAP) << 1 | DOUBLE_CHARS ; # of rows and double height chars
         .byte   $00             ; raster beam
-        .byte   $C0             ; character location ($0) and screen matrix ($C)
+        .byte   $cc             ; character location ($C) and screen matrix ($C)
         .byte   $00
         .byte   $00
         .byte   $00
@@ -2648,21 +2677,34 @@ LEDF3:  .byte   $1B
         ora     $5552
         .byte   $4E
 LEDFC:  .byte   $0D
-LEDFD:  brk
-LEDFE:  asl     $2C,x
-        .byte   $42
-        cli
-        ror     $9A84
-        .byte   $B0,$C6
-        .byte   $DC
-        .byte   $F2
-        php
-        asl     $4A34,x
-        rts
-        ror     $8C,x
-        ldx     #$B8
-        .byte   $CE
-        .byte   $E4
+
+;--------------------------------------
+SCREEN_LINE_TABLE:
+; a table of the start addresses of each screen line
+LEDFD:  .byte 0
+LEDFE:  .byte <(SCREEN_W)   ;$16
+	.byte <(SCREEN_W*2) ;$2c
+        .byte <(SCREEN_W*3) ;$42
+	.byte <(SCREEN_W*4) ;$58
+	.byte <(SCREEN_W*5) ;$6e
+	.byte <(SCREEN_W*6) ;$84
+	.byte <(SCREEN_W*7) ;$9a
+        .byte <(SCREEN_W*8) ;$b0
+	.byte <(SCREEN_W*9) ;$c6
+	.byte <(SCREEN_W*10) ;$dc
+        .byte <(SCREEN_W*11) ;$f2
+	.byte <(SCREEN_W*12) ;$08
+	.byte <(SCREEN_W*13) ;$1e
+	.byte <(SCREEN_W*14) ;$34
+	.byte <(SCREEN_W*15) ;$4a
+	.byte <(SCREEN_W*16) ;$60
+	.byte <(SCREEN_W*17) ;$76
+	.byte <(SCREEN_W*18) ;$8c
+	.byte <(SCREEN_W*19) ;$a2
+	.byte <(SCREEN_W*20) ;$b8
+	.byte <(SCREEN_W*21) ;$ce
+        .byte <(SCREEN_W*22) ;$e4
+
 ;--------------------------------------
 JIF_TALK:
 ;
@@ -2683,7 +2725,7 @@ LEE1C:  pha                         ;save .A
         lsr     $A3                 ;
 LEE2B:  pla                         ;get current device OR'd with $20
         sta     $95                 ;store to BSOUR
-        
+
         jsr     JIFFY_SERIAL_OUT_1  ;
 
         cmp     #$3F                ;was $912C $3F?
@@ -2718,9 +2760,9 @@ LEE66:  jsr     LE4B2
         lsr     a
         bcc     LEE66
         jsr     LEF8D
-        
+
         txa
-        pha 
+        pha
         ldx #$08                ; 8 BIT
         ;lda     #$08
         ;sta     $A5
@@ -2730,13 +2772,13 @@ LEE73:  lda     $911F
         bne     @0
         pla
         tax
-        jmp $EEB7               ; err TIMEOUT 
+        jmp $EEB7               ; err TIMEOUT
 
 @0:     jsr     LE4A0           ; DAV hi
         ror     $95             ; new
         bcs     @1              ; new
-        jsr     $E4A9           ; new DAV lo 
-        
+        jsr     $E4A9           ; new DAV lo
+
 @1:     jsr     LEF84           ; NDAC lo
         lda     $912C
         and     #$DD
@@ -2779,7 +2821,6 @@ LEEB9:  jsr     LFE6A               ; set I/O status word
         cli
         clc
         bcc     LEF09               ; always jump, do final handshake
-
 
 ;--------------------------------------
 SECOND:
@@ -2834,7 +2875,7 @@ CIOUT:
 ; The KERNAL routine CIOUT ($ffa8) jumps to this routine. If there is a
 ; character awaiting output in the buffer, then it is sent on the bus to
 ; the new JiffyDOS send routine. The output flag, C3PO is set (ie. bit 7 = 1)
-; and the contents of (A) is placed in the serial buffer. 
+; and the contents of (A) is placed in the serial buffer.
 ;
 LEEE4:  bit     $94             ;is there a byte waiting to be sent?
         bmi     LEEED           ;yes, send it
@@ -2847,7 +2888,6 @@ LEEED:  pha                     ;save the byte to be sent
 LEEF2:  sta     $95             ;store it in BSOUR - the serial character buffer
         clc
         rts
-
 
 ;--------------------------------------
 JIF_UNTALK:
@@ -2872,7 +2912,6 @@ LEF0F:  dex
         tax
         jsr     LEF84
         jmp     LE4A0
-
 
 ;--------------------------------------
 ACPTR:
@@ -3105,7 +3144,7 @@ LF05B:  lda     #$90
         sta     $911E           ; VIA #2 I.C.R.
         sta     $A9             ; RINONE, check for start bit
         lda     #$20
-        sta     $911E           ; disable timer 
+        sta     $911E           ; disable timer
         rts                     ; exit
 
 ;--------------------------------------
@@ -3116,7 +3155,7 @@ PROCESS_RS232_BYTE:
 ; test is passed, then the byte is stored in the in-buffer. Otherwise
 ; an error is flagged into RSSTAT.
 ;
-; A patch in KERNAL version 3, could be added to the input routine at $ef94 (if there 
+; A patch in KERNAL version 3, could be added to the input routine at $ef94 (if there
 ; was room) to initialise the RS232 parity byte, RIPRTY, on reception of a start bit.
 ;
 LF068:  lda     $A7             ; INBIT, RS232 in bits
@@ -3155,7 +3194,7 @@ LF0A5:  lda     #$80            ; framing break
 LF0A8:  lda     #$02            ; framing error
         ora     $0297           ; RSSTAT, 6522 status register image
         sta     $0297
-        jmp     LF05B           ; set up to receive 
+        jmp     LF05B           ; set up to receive
 LF0B3:  lda     $AA             ; RIDATA
         bne     LF0A8           ; framing error
         beq     LF0A5           ; receive break
@@ -3187,7 +3226,7 @@ LF0D4:  bit     $9110               ; RS232 I/O port
 LF0E1:  bit     $9110
         bvs     LF0EB               ; CTS set
         bmi     LF0E1               ; wait for no DSR
-        
+
 ;--------------------------------------
 NO_DSR_ERROR:
 ;This routine sets the 6522 status register image to $40 when a no DSR error
@@ -3285,8 +3324,6 @@ LF172:  pla                     ;retrieve .A
 LF174:  .byte   $0D,$49,$2F,$4F,$20,$45,$52,$52,$4F,$52,$20,$A3         ; i/o error #
         .byte   $0D,$53,$45,$41,$52,$43,$48,$49,$4E,$47,$A0             ; searching
         .byte   $46,$4F,$52,$A0                                         ; for
-        
-
 
 ;--------------------------------------
 JIFFY_SET_CHKIN:
@@ -3300,7 +3337,7 @@ LF199:  pha                     ; store .A
         pla                     ; retrieve .A
         tax
         jmp     $FFC6           ; CHKIN vector, opne channel for input
-        
+
 ;--------------------------------------
 JIFFY_SERIAL_OUT_1:
 ; clear $A3, the load flag and sets the data out line
@@ -3310,7 +3347,7 @@ JIFFY_SERIAL_OUT_1:
         lda     #$00            ; clear JiffyDOS device flag
         sta     $A3
         jmp     LE4A0           ; serial output 1
-        
+
 ;--------------------------------------
 JIFFY_SEND_DRIVE_COMMAND:
 ; This routine uses the values in (X) and (Y) to send a command to
@@ -3347,7 +3384,7 @@ INIT_VIA_DDA_AND_DDB:
 	sta $9122
 	rts
 ;	.res    9               ; FREE
-        
+
 ;---------------------------------------
 PRINT_MESSAGE_IF_DIRECT:
 ; This is a routine to output a message from the I/O messages table
@@ -3376,7 +3413,7 @@ GETIN:
 ; the RS232 port. If niether of these devices then GET is further handled
 ; by the next routine, INPUT.
 ;
-        
+
 LF1F5:  lda     $99             ; DFLTN, default input device
         bne     LF1FF           ; not keyboard
         lda     $C6             ; NDX, number of keys in keyboard queue
@@ -3402,7 +3439,7 @@ CHRIN:
 ; from the device so that end of file can be set if necessary (ie. ST = #40)
 ;
         lda     $99             ; DFLTN, default input
-        bne     LF260           ; not keyboard, next device 
+        bne     LF260           ; not keyboard, next device
         lda     $D3             ; PNTR, cursor column on screen
         sta     $CA             ; >LXSP, cursor position at start
         lda     $D6             ; TBLX, cursor line number
@@ -3418,7 +3455,7 @@ LF22A:  bcs     LF264
         cmp     #$02            ; RS232
         beq     LF26F           ; yes, get data from RS232 port
 
-LF230:  jsr     JIF_IECIN       ; JifyyDOS IECIN, get a byte from serial bus 
+LF230:  jsr     JIF_IECIN       ; JifyyDOS IECIN, get a byte from serial bus
         pha                     ; temp store
         bit     $A3             ; test bit 6, if serial device is a JiffyDOS device
         bvc     @1              ; not JiffyDOS
@@ -3447,9 +3484,9 @@ OLD_IVECTORS_TABLE:
 
 .res 11-6               ; FREE
 
-	
+
 LF260:  cmp     #$04    ; RS232?
-        bcc     LF21D   ; nope, go back and check for 
+        bcc     LF21D   ; nope, go back and check for
 ;--------------------------------------
 GET_FROM_SERIAL_RS232:
 ;These routines, actually two different, is entered from the
@@ -3463,7 +3500,7 @@ LF264:  lda     $90             ; status, I/O status word
 LF268:  lda     #$0D            ; else, return <CR> and exit
 LF26A:  clc
 LF26B:  rts
-LF26C:  jmp     JIF_IECIN       ; JiffyDOS ACPTR, get byte from serial bus 
+LF26C:  jmp     JIF_IECIN       ; JiffyDOS ACPTR, get byte from serial bus
 LF26F:  jsr     LF205           ; receive from RS232
 LF272:  bcs     LF279
 LF274:  cmp     #$00
@@ -3474,12 +3511,12 @@ LF279:  rts
 ;--------------------------------------
 CHROUT:
 ;output one character
-; The KERNAL routine CHROUT ($ffd2) is vectored to this routine. 
-; On entry, (A) must hold the character to be output. The default 
-; output device number is examined, and output directed to relevant 
-; device. The screen, serial bus and RS232 all use previously described 
+; The KERNAL routine CHROUT ($ffd2) is vectored to this routine.
+; On entry, (A) must hold the character to be output. The default
+; output device number is examined, and output directed to relevant
+; device. The screen, serial bus and RS232 all use previously described
 ; routines for their output.
-; Some old taperoutines have been removed in the middle of this 
+; Some old taperoutines have been removed in the middle of this
 ; routine, and been changed to a JiffyDOS routine.
 ;
         pha                     ; temp store to stack
@@ -3495,20 +3532,20 @@ LF285:  bcc     LF28B           ; device < 3
 ; removed the tape junk leftover in the C64 JiffyDOS
 LF28B:  cmp     #$02            ; device 2?
         beq     LF2B9           ; yes, RS232
-        
+
         pla                     ; retrieve .A
         jmp     LF78A           ; output device not present
 LF293:  jsr     LF943           ; entry point in JIFFY_OPEN_COMMAND_CHANNEL
         jsr     LE48F           ; input byte from command channel
         cmp     #$30
         rts
-        
+
 ;--------------------------------------
 JIFFY_DEFAULT_DEVICE:
-;The following routine sets the default device number. It uses 
+;The following routine sets the default device number. It uses
 ;the GTBYTC procedure to read the specifyed device number.
 ;
-        jsr     $D79B           ; GTBYTC, read device # from keyboard 
+        jsr     $D79B           ; GTBYTC, read device # from keyboard
         stx     $BA             ; store in FA, current device #
         jsr     LF7DF           ; test if FA is present
         stx     $BE             ; if everything's OK store in default device #
@@ -3518,17 +3555,17 @@ JIFFY_DEFAULT_DEVICE:
 SCAN_CONTROL:
 ;scan the keyboard to see if control is pressed. This is used in the SCROLL_SCREEN
 ;routine
-;   
+;
         lda #$FB
         sta $9120
         lda $9121
-        
+
         cmp #$FE
         php
         lda #$F7
         sta $9120
         plp
-        rts       
+        rts
 
 ;--------------------------------------
 CHROUT_2:
@@ -3576,7 +3613,7 @@ LF2E3:  ldx     $B9             ; SA, current secondary address
 LF2EC:  sta     $99             ; DFLTN, default input device
         clc                     ; clear carry to indicate no errors
         rts
-        
+
 LF2F0:  tax                     ; file .X to .A
         jsr     LEE14           ; send LISTEN to serial device
         lda     $B9             ; SA
@@ -3661,7 +3698,7 @@ LF351:  jsr     LF3DF               ;get file values from table, position .X
         pla                         ;retrieve .A (table position)
         jsr     LF3B2               ;remove entry .A from file table
         lda     #$7D                ;init RS232 port
-        sta     $911E   
+        sta     $911E
         lda     #$06
         sta     $9110
         lda     #$EE
@@ -3722,7 +3759,7 @@ LF3CF:  lda     #$00
         sta     $90             ;clear STATUS
         txa                     ;file number to search for
 LF3D4:  ldx     $98             ;LDTND, number of open files
-LF3D6:  dex 
+LF3D6:  dex
         bmi     LF3EE           ;end of table, return
         cmp     $0259,x         ;compare file number with LAT, table of open files
         bne     LF3D6           ;not equal, try next
@@ -3816,8 +3853,8 @@ LF444:  cmp     #$01            ;TAPE
 
 ;--------------------------------------
 JIFFY_TALK_AND_TKSA:
-;This is a routine used by JiffyDOS to untalk device (A), then 
-;TALK and TKSA is executed to current device with current secondary 
+;This is a routine used by JiffyDOS to untalk device (A), then
+;TALK and TKSA is executed to current device with current secondary
 ;address.
 ;
 LF44B:  jsr     LFFAB           ; UNTALK
@@ -3831,11 +3868,11 @@ asl     $1C             ; garbage
 
 ;--------------------------------------
 JIFFY_DIRECT_DRIVE_COMMANDS:
-;The following text/code is used to transfer, and is transfered to 
-;a selected drive. The first section is a $22 byte long block used 
-;by the lock/unlock a file. The second section is code to execute a 
-;drive program at $0600. The third section sets a byte in the drive 
-;memory to control the interleave. The fourth section sets a byte in 
+;The following text/code is used to transfer, and is transfered to
+;a selected drive. The first section is a $22 byte long block used
+;by the lock/unlock a file. The second section is code to execute a
+;drive program at $0600. The third section sets a byte in the drive
+;memory to control the interleave. The fourth section sets a byte in
 ;the drive memory to control the 1541 head rattle.
 ; TODO: don't know about this stuff
 ;
@@ -3873,7 +3910,7 @@ LF495:  lda     $B9             ;SA, current secondary address
         bmi     LF4C5           ;exit
         ldy     $B7             ;FNLEN, length of filename
         beq     LF4C5           ;exit
-        
+
         lda     $BA             ;FA, current device number
         jsr     LEE17           ;send LISTEN to serial bus
         lda     $B9             ;SA
@@ -3892,7 +3929,7 @@ LF4B8:  lda     ($BB),y         ;FNADR, pointer to filename
         iny                     ;next character
         cpy     $B7             ;until entire filename is sent
         bne     LF4B8           ;again
-LF4C2:  jsr     LEF04           ;unlisten 
+LF4C2:  jsr     LEF04           ;unlisten
 LF4C5:  clc
         rts                     ;exit
 
@@ -3971,7 +4008,7 @@ LF542:  stx     $C3			;MEMUSS, relocated load address
         jmp     (L0330)		;ILOAD vector. points to $f549 (next instruction)
 LF549:  sta     $93			;VRECK, load/verify flag
         lda     #$00
-        sta     $90			;clear STATUS, I/O status 
+        sta     $90			;clear STATUS, I/O status
         lda     $BA			;get FA, current device
         bne     LF556		;keyboard
 LF553:  jmp     LF796		;I/O error #9, illegal device
@@ -4032,9 +4069,9 @@ LF592:  jsr     JIF_IECIN       ; JiffyDOS ACPTR, retrieve from serial bus
         beq     LF5B3           ; LOAD
         cmp     ($AE),y         ; compare with memory
         beq     LF5B5           ; verified byte OK
-        
+
         jsr     LFCDE           ; lda #$10, jmp LFE6A
-        
+
         .byte   $2C             ; mask next write command
 LF5B3:  sta     ($AE),y         ; store in memory
 LF5B5:  stx     $A3
@@ -4054,12 +4091,12 @@ JIFFY_AT_COMMAND:
 ; The following routine executes the @ command. First it tests
 ; if additional parameters are entered.
 ;
-LF5CA:  lda     $B7     ; FNLEN, length of current filename
+	lda     $B7     ; FNLEN, length of current filename
         beq     LF5DB   ; no filename
         lda     ($BB),y ; test filename for...
         cmp     #$24    ; $ (directory)
         beq     LF604   ; list directory
-LF5D4:  jmp     NORMAL_LOAD     ; load
+	jmp     NORMAL_LOAD     ; load
 
 ;--------------------------------------
 JIFFY_LIST_ASCII_FROM_DISK:
@@ -4069,7 +4106,7 @@ JIFFY_LIST_ASCII_FROM_DISK:
 ;
 LF5D7:  tya             ; .Y contains the command number
 LF5D8:  pha             ; store on stack
-        jsr     LF943   ; 
+        jsr     LF943   ;
         pla             ; retrieve
 LF5DB:  sta     $A6     ; store
 LF5DD:  jsr     JIFFY_DISPLAY_ASCII_FILE   ; input characters to buffer (filename area)
@@ -4093,10 +4130,10 @@ LF5DD:  jsr     JIFFY_DISPLAY_ASCII_FILE   ; input characters to buffer (filenam
 
 ;--------------------------------------
 JIFFY_BASIC_DISC_LIST:
-;The following routine reads the specifyed basic-file 
+;The following routine reads the specifyed basic-file
 ;from disk and displays it to the screen. The entrypoint
 ;at $f56c is used for showing the directory. First, the
-;routine opens the file specifyed. IERROR vector is 
+;routine opens the file specifyed. IERROR vector is
 ;changed to $f739, so a RTS command will be performed
 ;when a error occurs. Then the start address is read,
 ;and thrown away.
@@ -4117,9 +4154,9 @@ LF615:  jsr     READ_INTO_BUFFER   ; read 254 bytes, store in input buffer
         cpy     #$06
         bcc     LF615
 
-        ldx     $BB     ; read FNADR pointer, vector to input buffer        
+        ldx     $BB     ; read FNADR pointer, vector to input buffer
         lda     $BC     ; FNADR HI
-        stx     $5F     
+        stx     $5F
         sta     $60     ; store in temp vector
 
         jsr     STORE_LIST_FROM_ADDR   ; store .A in ($5F)+1, $BC in ($5F)
@@ -4129,13 +4166,13 @@ LF635:  jsr     $C6D4
         lda     $91     ; check STKEY Flag
         lsr     a
         bcs     LF613   ; not pressed, continue
-LF63B:  lda     #$E6    ; restore JiffyDOS IERROR vector to $F7E6 
+LF63B:  lda     #$E6    ; restore JiffyDOS IERROR vector to $F7E6
         sta     $0300
         rts
 
 ;--------------------------------------
 LOAD_END:
-;This is the last part of the loader routine which 
+;This is the last part of the loader routine which
 ;sets the (X/Y) register with the endaddress of the
 ;loaded program, clears carry and exit.
 ;
@@ -4161,7 +4198,7 @@ LF647:  lda     $9D             ;MSGFLG, direct or program mode?
         beq     LF669           ;no name, exit
         ldy     #$17
         jsr     LF1E6           ;print "FOR"
- 
+
 ;--------------------------------------
 PRINT_FILENAME:
 ;Filename is pointed to by FNADR, and length in FNLEN.
@@ -4270,9 +4307,9 @@ LF6EF:  clc
 
 ;--------------------------------------
 JIFFYDOS_DEFAULT_FILENAME:
-;The following routine is executed when a missing 
-;filename is detected in the original loader routine. 
-;If so, the filename is set to ':*', wildcard filename. 
+;The following routine is executed when a missing
+;filename is detected in the original loader routine.
+;If so, the filename is set to ':*', wildcard filename.
 ;On exit, a jump is made to the original loader with
 ;new filename parameters set.
 ;
@@ -4284,7 +4321,7 @@ LF6F1:  lda     $C6             ;NDX, number of characters in keyboard buffer
         ldy     #$F7            ;i.e. ':*'
         jsr     LFFBD           ;SETNAM
         jmp     LF563           ;back to loader routine
-        
+
 LF703:  ldx     #$33            ;offset
         ldy     #$04            ;length
         jmp     LF9B9           ;drive command
@@ -4350,7 +4387,7 @@ LOG_VIA_READING:
 ; If so, the keypress is stored in STKEY.
 ;
 LF755:  lda     $912F           ; read value
-        cmp     $912F           
+        cmp     $912F
         bne     LF755           ; wait for value to settle
         sta     $91
         rts
@@ -4432,10 +4469,10 @@ LF796:  lda     #$09            ;error #9, illegal device number
         jsr     LF1E6           ;print "I/O ERROR #"
         pla                     ;get the error #
         pha                     ;save
-        ora     #$30            ;convert to ASCII 
+        ora     #$30            ;convert to ASCII
         jsr     LFFD2           ;print the #
 LF7AC:  pla                     ;restore error code
-        sec 
+        sec
         rts                     ;done
 
 ;--------------------------------------
@@ -4475,7 +4512,7 @@ LF7C0:  clc                     ;clear carry
 @0:     cpx     #$1F            ;serial device must be less than $1f (31)
         bcc     @2              ;less than $1f
 @1:     plp                     ;if carry set, this is second time
-        bcs     LF7E4           ;do error 
+        bcs     LF7E4           ;do error
         sec                     ;set carry to indicate first reset
         php                     ;store carry
         ldx     #$08            ;start at $08 again
@@ -4492,13 +4529,12 @@ LF7DF:  jsr     LE4D1           ;test devicenumber in FA
         bcc     LF7DE           ;OK
 LF7E4:  ldx     #$05            ;ERROR, device not present
 
-
 ;--------------------------------------
 JIFFY_IERROR:
 ; ERROR vector points here.  If it is a syntax error ($0b)
-; JiffyDOS checks if it caused it, otherwise it is 
+; JiffyDOS checks if it caused it, otherwise it is
 ; handled as it normally would be.
-;  .X= error # 
+;  .X= error #
 ;
 LF7E6:  cpx     #$0B            ; SYNTAX ERROR
         beq     LF7ED           ; yes, jump to command test
@@ -4552,15 +4588,14 @@ JIFFY_VERIFY:
 ;
         iny                     ; contrary to the C64 docs, having tya, then iny will VERIFY when it should
                                 ; load, and load when it should verify. this seems correct...
-
 ;--------------------------------------
 JIFFY_BASIC_LOAD:
 ; This is the entrypoint for / and 'arrow up' which loads a basic program.
 ; The LOAD/VERIFY is performed. Depending on what command is executed, various
 ; end routines are performed.
 ;
-        tya 
-        sty     $B9             ;SA
+        tya
+        sty     $B9             ; SA
         ldx     $2B             ; TXTTAB- start of BASIC
         ldy     $2C
         jsr     LFFD5           ; LOAD
@@ -4584,7 +4619,6 @@ LF850:  bcc     LF83D           ; if command # < 8, test if OK and exit
         jsr     LC533           ; rechain BASIC lines
         jmp     $C871           ; perform RUN
 
-
 ;JIFFY COMMAND TABLE-------------------
 ; @, <-, *, *., ", "., /, /.
 LF861:  .byte   $40, $5F, $2A, $AC, $22, $12, $2f, $AD
@@ -4597,8 +4631,8 @@ LF86E:  .byte   $44, $4C, $54, $23, $42, $46, $4F, $50, $51, $58, $47
 
 ;JIFFY COMMAND VECTORS----------------
 ; in the order of the above command characters
-LF879: 
-.word   $F5CA   ; @
+LF879:
+.word   JIFFY_AT_COMMAND ; @
 .word   $E156   ; <-
 .word   $FA81   ; *
 .word   $FA81   ; XX
@@ -4607,7 +4641,7 @@ LF879:
 .word   $F82E   ; /
 .word   $F82E   ; XX
 .word   $F82A   ; %
-.word   JIFFY_BASIC_LOAD   ; arrow up 
+.word   JIFFY_BASIC_LOAD   ; arrow up
 .word   $F82E   ; XX
 .word   $F82D   ; ´
 .word   $F82A   ; £
@@ -4616,15 +4650,16 @@ LF879:
 .word   $F601   ; D
 .word   $F958   ; L
 .word   $F5D7   ; T
-.word   $F29C   ; # 
-.word   $F9B3   ; B 
-.word   $E48b ;7   ; F - disable function keys
+.word   $F29C   ; #
+.word   $F9B3   ; B
+.word   $E48b   ; F - disable function keys
 .word   $F8A9   ; O
 .word   $FADF   ; P
 .word   DISABLE_JIFFYDOS_COMMANDS ;$FCEF   ; Q
 .word   JIFFY_X_COMMAND ;$FCD3   ; X
 .word   $F9AB   ; G
 ;----------------JIFFY COMMAND VECTORS
+
 ;---------------------------------------
 JIFFY_OLD:
 ; performs an OLD after NEW or a reset.  rechains pointers, etc.
@@ -4642,20 +4677,19 @@ JIFFY_OLD:
         tay                     ; .X and .Y contain start of variables
         jmp     LE1A7           ; set start of variables and restart BASIC
 
-
 ;--------------------------------------
 JIFFY_COMMAND_2:
-;This routine is called from the JiffyDOS COMMAND routine and 
-;make a test for additional command characters after the 
-;'@' character. Only the command number $0d-$17 is tested. 
-;If text after '@' is not a JiffyDOS command 
+;This routine is called from the JiffyDOS COMMAND routine and
+;make a test for additional command characters after the
+;'@' character. Only the command number $0d-$17 is tested.
+;If text after '@' is not a JiffyDOS command
 ;(ie. a normal DOS command', or JiffyDOS command number less than
-;$10, a filename is expected. Tests are made for colon and 
-;quotes, the filname is evaluated, and parts of the OPEN/CLOSE 
+;$10, a filename is expected. Tests are made for colon and
+;quotes, the filname is evaluated, and parts of the OPEN/CLOSE
 ;routine is used to SETNAM. A test is made for additional device
-;number after a comma. A free line on the screen is found, and 
-;some string-house keeping is done. 
-;Finally, the routine continues through to the next routine to 
+;number after a comma. A free line on the screen is found, and
+;some string-house keeping is done.
+;Finally, the routine continues through to the next routine to
 ;open the command channel.
 ;
 LF8BC:  tya
@@ -4671,7 +4705,7 @@ LF8C8:  jsr     LF7B4           ; test if character is JiffyDOS command
         sty     $27             ; temp store
         cpy     #$10            ; read command value
         bcs     LF90B           ; if >$10, filename not expected
-LF8D7:  lda     #$01            
+LF8D7:  lda     #$01
         jsr     $C8FC           ; add TXTPTR by one
 LF8DC:  ldy     #$FF            ; init pointer
 LF8DE:  iny
@@ -4682,9 +4716,9 @@ LF8DE:  iny
         cmp     #$3A            ; colon?
         bne     LF8DE
 LF8ED:  bit     $9D             ; test MSGFLAG if direct mode
-        bpl     LF8F9           
+        bpl     LF8F9
         clc
-        jsr     $CEBD           ; 
+        jsr     $CEBD           ;
         jmp     LF8FC
 LF8F6:  jsr     $C8FB           ; add value in .Y to TXTPTR
 LF8F9:  jsr     LCD9E           ; evaluate expression in text
@@ -4705,19 +4739,19 @@ LF911:  lda     ($D1),y         ; current screen line address, read from screen
         bne     LF911
 LF91E:  jsr     LF7DF           ; test if device FA is present
         lda     #$FF
-        jsr     $D475           ; 
+        jsr     $D475           ;
         lda     $B7             ; FNLEN
         ldx     $BB             ; FNAD/DR, pointer to current filename
         ldy     $BC
         jsr     $D4C7           ;
-        jsr     $D6A3           ; do string housekeeping 
+        jsr     $D6A3           ; do string housekeeping
         stx     $BB             ; store in FNADR, pointer to current filename
         sty     $BC
 
 ;--------------------------------------
 JIFFY_OPEN_COMMAND_CHANNEL:
 ; open the command channel. A test is done to see if
-; it is already open.  If so, the command channel is 
+; it is already open.  If so, the command channel is
 ; closed before opened.
 ;
 LF936:  jsr     LF394           ; close command channel if open
@@ -4740,10 +4774,10 @@ LF957:  rts
 
 ;--------------------------------------
 JIFFY_LOCK_UNLOCK_FILE:
-;This routine locks/unlocks specifyed file. The file 
+;This routine locks/unlocks specifyed file. The file
 ;is opened, and tests are made to check that everything
-;is OK. If so a bunch of code are transfered to the 
-;drive, and executed. The code to be transfered is 
+;is OK. If so a bunch of code are transfered to the
+;drive, and executed. The code to be transfered is
 ;found at $f398, after the memory-write command.
 ;
         jsr     LF293           ; open file and test that all is OK
@@ -4760,7 +4794,7 @@ LF968:  jsr     JIFFY_SEND_DRIVE_COMMAND           ; execute direct drive comman
 JIFFY_PATCH:
 ;serial send
 ; This is a patch to the original Commodore KERNAL to send data on
-; the serial bus. 
+; the serial bus.
 ;
 ;from SJLoad. see label 'lF96E'
 ;TODO: possibly timing sensitive
@@ -4769,7 +4803,7 @@ JIFFY_PATCH:
 LF96E:  sta     $912C           ; store in serial bus I/O port
         bit     $911F           ; test ATN, attention
         bpl     LF997           ; ATN=1, done
-        cpx     #$02            ; 
+        cpx     #$02            ;
         bne     LF997           ; done
         lda     #$02            ; test bit 1 (DATA) of serial bus
 
@@ -4794,11 +4828,11 @@ LF997:  rts
 JIFFY_DISPLAY_ASCII_FILE:
 ;The following routine is called by the LIST ASCII from
 ;disk. It clears the command channel and calls a routine
-;that reads maximum 254 character from  the file. This 
+;that reads maximum 254 character from  the file. This
 ;is repeated until the entire file is displayed.
 ;
 LF998:  ldy     #$00
-        jsr     JIFFY_SET_CHKIN           ; CLRCHN and perform CHKIN on .A 
+        jsr     JIFFY_SET_CHKIN           ; CLRCHN and perform CHKIN on .A
 LF99D:  jsr     READ_INTO_BUFFER+3           ; read text into buffer
         bvs     LF9A4           ; finish
         bcc     LF99D           ; next
@@ -4809,19 +4843,19 @@ LF9A4:  sty     $B7             ; FNLEN, length of current file name
 
 ;--------------------------------------
 JIFFY_INTERLEAVE:
-;The following routine sets the interleave gapsize by 
+;The following routine sets the interleave gapsize by
 ;writing the selected value to drive memory
 ;at position $0069.
 ;
-        jsr     $D79B           ; GETBYTC, get byte from keyboard 
-        txa                     ; transfer to gapsize in .A 
+        jsr     $D79B           ; GETBYTC, get byte from keyboard
+        txa                     ; transfer to gapsize in .A
         ldx     #$2D            ; setup drive command at $f398+$2D, M-W 69 00 01
         bne     LF9B7           ; jmp
- 
+
 ;--------------------------------------
 JIFFY_BUMP_DISABLE:
-;The following routine disables the 1541 head rattle. 
-;This is done by writing the value $85 to drivememory 
+;The following routine disables the 1541 head rattle.
+;This is done by writing the value $85 to drivememory
 ;at position $006a.
 ;
         lda     #$85
@@ -4834,10 +4868,10 @@ LF9B9:  pha
 
 ;--------------------------------------
 JIFFY_MARK_FILE_FOR_COPY:
-;This routine toggles the copy flag for one file, of 
-;for all selected files depending on the entry point. 
-;If entry at $f93a, the copy flags for all files will 
-;be toggled, and if entry at $f93d only one will be 
+;This routine toggles the copy flag for one file, of
+;for all selected files depending on the entry point.
+;If entry at $f93a, the copy flags for all files will
+;be toggled, and if entry at $f93d only one will be
 ;affected.
 LF9C1:  ldx     #$00            ; toggle flag for all files
         .byte   $2C             ; mask LDX
@@ -4852,7 +4886,7 @@ LF9C4:  ldx     #$06            ; toggle flag for current file
         pha
         ldy     #$23            ; set offset to $23
 LF94F:  ldx     #$22            ; search for a quote mark (")
-        jsr     $C917           ; use part of DATAN to search 
+        jsr     $C917           ; use part of DATAN to search
         dey
         jsr     $C8FB           ; add offset in .Y to TXTPTR
         pla                     ; read flag, set at start
@@ -4872,7 +4906,7 @@ LF9F3:  tay
         sta     ($7A),y         ; store it
         ldy     #$04
         sta     ($D1),y
-LF9FE:  jsr     $C8F8           ; DATA, perform data, skip line like REM 
+LF9FE:  jsr     $C8F8           ; DATA, perform data, skip line like REM
         ldy     #$05
         sec
         lda     ($7A),y
@@ -4884,17 +4918,17 @@ LF9FE:  jsr     $C8F8           ; DATA, perform data, skip line like REM
         beq     LFA14           ; if 0, all files were marked/unmarked, do LIST
         lda     #$8D
         rts
-LFA14:  jmp     $C6A4           ; LIST 
+LFA14:  jmp     $C6A4           ; LIST
 
 ;--------------------------------------
 JIFFY_TOGGLE_DRIVE_COMMANDS:
 ;This routine is continued from JiffyDOS get character.
-;It tests if the keys <CTRL D> are pressed. If so, it 
+;It tests if the keys <CTRL D> are pressed. If so, it
 ;increments the internal device counter and tests if it
-;is present. The routine will return the new device number 
-;in (X), which will be printed, and the routine exits. 
-;If <CTRL D> were not pressed, it continues to test 
-;<CTRL A> and <CTRL W>. If not, the routine continues 
+;is present. The routine will return the new device number
+;in (X), which will be printed, and the routine exits.
+;If <CTRL D> were not pressed, it continues to test
+;<CTRL A> and <CTRL W>. If not, the routine continues
 ;to the funktion key test.
 ;
 LFA17:  bit     $9D             ; test MSGFLAG
@@ -4920,10 +4954,10 @@ LFA39:  cmp     #$01            ; test code #$01 <CTRL-A>, toggle all files for 
 
 ;--------------------------------------
 TEST_JIFFY_FUNCTION_KEYS:
-;This routine test if a shifted, or unshifted function 
-;key were pressed. If so, it sends a string containing 
-;the command to the keyboard buffer. The vector in $b0 
-;points to the command sting table. The strings are in 
+;This routine test if a shifted, or unshifted function
+;key were pressed. If so, it sends a string containing
+;the command to the keyboard buffer. The vector in $b0
+;points to the command sting table. The strings are in
 ;numerical order, and seperated by a null byte. To find
 ;the right string, the routine counts through them all
 ;till it reaches the X:th string.
@@ -4955,11 +4989,11 @@ LFA6B:  rts
 
 ;--------------------------------------
 JIFFY_GET_CHARACTER:
-;This routine is a new JiffyDOS routine to handle 
-;extended functions. It is called from $e5ec, and 
-;starts with the original jump. The routine test the 
-;F-keys, and if a valid combination of <CTRL xx> is 
-;pressed. If quote mode or insert mode is activated, 
+;This routine is a new JiffyDOS routine to handle
+;extended functions. It is called from $e5ec, and
+;starts with the original jump. The routine test the
+;F-keys, and if a valid combination of <CTRL xx> is
+;pressed. If quote mode or insert mode is activated,
 ;then this routine will exit.
 ;
 LFA6C:  jsr     LE5CF           ; get character from keyboard buffer
@@ -4970,19 +5004,6 @@ LFA6C:  jsr     LE5CF           ; get character from keyboard buffer
         bne     LFA7F           ; if not zero, insert mode is on, exit
         cmp     #$10            ; test code $10 <CTRL-P>, screen dump
         bne     LFA17           ; if not pressed, jump and test other keys
-
-;--------------------------------------
-;JIFFY_SCREEN_DUMP:
-;THIS FUNCTION HAS BEEN REMOVED!!!!!!!
-;This routine performs a screen dump when the keys 
-;<CTRL P> are pressed. It reads $d018 to determine if 
-;upper or lower character set is used, and sends the 
-;proper SA after LISTEN. The routine stores the cursor 
-;positions on the stack, and retrieves them, and 
-;replaces the cursor on exit. To print a character to 
-;the serial bus, the routine uses part of the KERNAL 
-;CIOUT routine.
-;
 
 .res 3                      ;FREE
 
@@ -5042,14 +5063,14 @@ LFAD2:  jsr     LFAFA           ; set SA to .Y and more
 ;--------------------------------------
 TOGGLE_PRINTER:
 ;The following routine toggles the printer output function.
-;It reads the CHANNL to determine if printmode is to be 
+;It reads the CHANNL to determine if printmode is to be
 ;turned on or off.
 ;
         lda     $13             ; CHANNL, contains 00 if current output is screen
         beq     LFAEF           ; toggle printer on
         cmp     #$7F            ; CHANNL contains 7F if current output is printer
         bne     LFA80           ; jump to RTS
-        jsr     $CBB7           ; CLRCHN, clear all channels, and set CHANNL=0 
+        jsr     $CBB7           ; CLRCHN, clear all channels, and set CHANNL=0
         lda     #$7F
         jmp     $FFC3           ; close file $7F
 
@@ -5082,7 +5103,7 @@ PATCH_TO_ORIGINAL_LOAD:
 LFB18:  bit     $A3             ; LDFLG, are we talking to a JiffyDOS device?
         bmi     LFB1F           ; yes, continue to fastload routine
         jmp     LF58A           ; nope, return to the original load routine
-		
+
 ;--------------------------------------
 ;JIFFY FASTLOAD START from SJLoad label '.FB1F'
 JIFFY_XFER_ROUTINE_FOR_LOAD:
@@ -5093,13 +5114,13 @@ LFB1F:  jsr     JIF_UNTALK
         lda     #$61
         jsr     DISK_TALK
         sei
-        lda     $B2        
+        lda     $B2
         pha
         ldy     #$00            ; offset to address to store/verify byte from ($AE) (always 0)
 LFB25:  jsr     LF755           ; read $912F and wait for value to settle
         cmp     #$FE
-        beq     _STOP           ; 
-        
+        beq     _STOP           ;
+
 ;timing:
 ;NTSC: 35*(1/1.022727) = 34.222231348 microseconds
 ;PAL: 35*(1/1.1108405) = 31.507673694 microseconds
@@ -5154,7 +5175,7 @@ STOREBYTE_LOOP:
 ;NTSC: 23*(1/1.022727) = 22.4888948859 microseconds
 ;PAL: 25*(1/1.1108405) = 22.50548121 microseconds
         pha                     ;3 timing
-        pla                     ;4 timing 
+        pla                     ;4 timing
 .IFNDEF NTSC
         nop                     ;2
 .ENDIF
@@ -5163,7 +5184,7 @@ STOREBYTE_LOOP:
         lda     #$01            ;2 bit 0 (CLK)
         bit     $911F           ;4 check CLK
         beq     LFB25           ;2/3 if zero, start over
-        
+
 ;timing (1 + 14):
 ;NTSC: 13*(1/1.022727) = 14.666670578 microseconds
 ;PAL: 15*(1/1.1108405) = 13.503288726 microseconds
@@ -5171,7 +5192,7 @@ STOREBYTE_LOOP:
         lda     $911F           ;4 read serial bus
         ror     a               ;2 shift bit 0 into carry and bit 1 into bit 0
         ror     a               ;2 shift bit 0 into bit 7 and bit 1 into carry
-        
+
 .IFNDEF NTSC
         nop                     ;2
 .ENDIF
@@ -5218,7 +5239,7 @@ LFBB0:  cmp     ($AE),y         ; verify byte
         lda     #$10            ; set STATUS
         sta     $90             ; STATUS
         bne     LFBA7           ; continue verifying
-        
+
 
 ;---------JIFFY DATA
 LFBB9:  .byte $00,$00,$20,$20,$00,$00,$20,$20,$02,$02,$22,$22,$02,$02,$22,$22
@@ -5239,9 +5260,9 @@ LFBD2:  lda     $C2
 ;----------------JIFFY BYTE IN
 JIF_IECIN:
 LFBDB:  sei
-        bit     $A3         ;is the device JiffyDOS equipped? 
+        bit     $A3         ;is the device JiffyDOS equipped?
         bvs     JIFFY_IN    ;yes
-        lda     #$00        ;no, 
+        lda     #$00        ;no,
         jmp     LEF1C       ;drive not jiffydos equipped, use original routine
 
 ;--------------------------------------
@@ -5254,11 +5275,11 @@ JIFFY_IN:
 ;
 
 ;timing:
-;NTSC: 18*(1/1.022727) microseconds = 17.6000004693 microseconds 
+;NTSC: 18*(1/1.022727) microseconds = 17.6000004693 microseconds
 ;PAL: 18*(1/1.108405) microseconds = 16.239551428 microseconds
 LFBE5:  lda     $911F       ;4 serial bus
         and     #$03        ;2 mask clock-in and data-in bits
-        beq     LFBE5       ;2 wait for one of them to be high 
+        beq     LFBE5       ;2 wait for one of them to be high
         lda     #$80        ;2 initialize the byte-received flag
         sta     $9C         ;3 to $80
         txa                 ;2 save .X
@@ -5274,8 +5295,8 @@ LFBE5:  lda     $911F       ;4 serial bus
         nop                 ;2
 .ENDIF
 .IFNDEF NTSC
-        pha                 ;3 
-        pla                 ;4 
+        pha                 ;3
+        pla                 ;4
 .ENDIF
 
 ;timing:
@@ -5308,7 +5329,7 @@ LFBE5:  lda     $911F       ;4 serial bus
         ror     a           ;2 get bit 0 (clock)
         ror     a           ;2 get bit 1 (data)
 .IFNDEF NTSC
-        nop                 ;2 
+        nop                 ;2
 .ENDIF
 
 ;timing:
@@ -5319,7 +5340,7 @@ LFBE5:  lda     $911F       ;4 serial bus
         rol     a           ;2 get bit 2 (clock)
         rol     a           ;2 get bit 3 (data), now we have a nybble
         sta     $B3         ;3 store the low nybble of the byte we are reading in $B3
-        
+
         lda     $911F       ;4 read serial bus again for the high nybble
         ror     a           ;2 get bit 4 (clock)
         ror     a           ;2 get bit 5 (data)
@@ -5337,7 +5358,7 @@ LFBE5:  lda     $911F       ;4 serial bus
         sta     $C0         ;3 store the most significant nybble in $C0
         lda     $911F       ;4 read clock and data once more to set recieved flag
         stx     $912C       ;4 handshaking - bring serial bus data line low
-;end of timing sensitive portion       
+;end of timing sensitive portion
 
         sta     $9C         ;set byte-received flag
         jsr     JIFFY_BYTE_IN   ;assemble the byte that was read
@@ -5387,14 +5408,14 @@ LFC55:  txa             ; store .X on stack
         lsr     a
         lsr     a
         tax             ; give to .X
-        lda     LFCCE,x ; get the corresponding data from the send table 
+        lda     LFCCE,x ; get the corresponding data from the send table
         pha             ; save it
         txa             ; restore .A to .X
         lsr     a       ; next 2 bits
         lsr     a
         tax             ; give to .X
         lda     LFCCE,x ; get the corresponding send table data again
-        sta     $B3     
+        sta     $B3
         lda     $95     ; restore BSOUR
         and     #$0F    ; get LSB of BSOUR
         tax             ; give to .X
@@ -5410,13 +5431,13 @@ LFC55:  txa             ; store .X on stack
 ;PAL: 15
 LFC72:  bit     $911F   ;4 wait for bit 1 (data) of $911F to be set
         beq     LFC72   ;2 loop until data is 1
-        
+
         lda     $912C   ;4 handshaking - (bring serial bus data line high)
         and     #$DD    ;2 yep
         sta     $9C     ;3 save what we want to handshake.
 ;timing
-;NTSC: 14 * 
-;PAL: 20 * 
+;NTSC: 14 *
+;PAL: 20 *
         pha             ;3
         pla             ;4
         pha             ;3
@@ -5429,7 +5450,7 @@ LFC72:  bit     $911F   ;4 wait for bit 1 (data) of $911F to be set
 ;timing
 ;NTSC: 14
 ;PAL: 16
-        sta     $912C   ;4 handshaking - bring the data line high 
+        sta     $912C   ;4 handshaking - bring the data line high
         pla             ;3 restore .A (gotten from send table earlier)
         ora     $9C     ;3 OR with handshake value to get value to send
 
@@ -5442,12 +5463,12 @@ LFC72:  bit     $911F   ;4 wait for bit 1 (data) of $911F to be set
 ;NTSC: 20
 ;PAL: 22
         lda     $B3     ;3 get 2nd value to send
-        ora     $9C     ;3 OR with old $912C 
+        ora     $9C     ;3 OR with old $912C
         ora     $9C     ;3 timing
         sta     $912C   ;4 send to drive over serial bus
-        
+
         lda     LFBB9,x ;4 Get third value to send from table
-        ora     $9C     ;3 OR with old $912C 
+        ora     $9C     ;3 OR with old $912C
 .IFNDEF NTSC
         nop             ;2
 .ENDIF
@@ -5465,9 +5486,9 @@ LFC72:  bit     $911F   ;4 wait for bit 1 (data) of $911F to be set
 .ENDIF
 
 ;timing
-;NTSC: 18/19 
+;NTSC: 18/19
 ;PAL: 20/21
-        and     #$DD    ;2 
+        and     #$DD    ;2
         bit     $A3     ;3 is bit 7 of LDFLAG set?
         bmi     LFCB3   ;2/3 yes, don't bring data line low yet
         ora     #$02    ;2 no, OR to bring serial bus data line low
@@ -5493,7 +5514,7 @@ LFCB3:  sta     $912C   ;4 handshaking - bring data line low
         jmp     LEEB7           ; no, err TIME OUT
 ;------------JIFFY BYTE OUT
 
-.IFDEF NTSC 
+.IFDEF NTSC
         .res 7
 .ENDIF
 
@@ -5505,15 +5526,9 @@ LFCCE:  .byte $00,$02,$20,$22,$00,$02,$20,$22,$00,$02,$20,$22,$00,$02,$20,$22
 
 .res    1       ; FREE
 
-
-;TODO: this needed?
-;LFCD3:  beq     RENAME_THIS     ; 
-;        ldx     #$F7            ; 
-;        jmp     PRINT_FILENAME
-
 ;--------------------------------------
 JIFFYDOS_X_COMMAND:
-;The following routine sets the  destination devicenumber when using the 
+;The following routine sets the  destination devicenumber when using the
 ;JiffyDOS copyroutine.
         jsr $d79b               ; GTBYTC, get destination device
         stx $bf                 ; store in $BF
@@ -5524,7 +5539,7 @@ JIFFYDOS_X_COMMAND:
 READ_INTO_BUFFER:
 ; The following routine is used by the LIST ASCII and LIST BASIC
 ; directly from disk. It reads a number of bytes into the filename
-; buffer area. 
+; buffer area.
 ;
         jsr     JIFFY_SET_CHKIN
 @0:     jsr     $FFCF           ; CHRIN, get a character
@@ -5551,11 +5566,11 @@ DISABLE_JIFFYDOS_COMMANDS:
 
         stx     $9B                         ; .X = 255, JiffyDOS not activated
         rts
-		
+
         lda     $AC
         ora     ($29,x)
         sbc     $0185,x
-		
+
 LFD11:  sec
         lda     $AC
         sbc     $AE
@@ -5576,21 +5591,21 @@ POWER_RESET_ENTRY_POINT:
 ; If so, an indirectjump is performed to the cartridge coldstart vector at
 ; $A000. I/O chips are initiated, and system constants are set up. Finaly
 ; the IRQ is enabled, and an indirect jump is performed to $c000, the basic
-; cold start vector. 
+; cold start vector.
 ;
 LFD22:  ldx     #$FF
         sei
-        txs					;initialize stack pointer
-        cld					;disable decimal mode
-        jsr     LFD3F		;check if there is a cartridge present
-        bne     LFD2F		;if not, continue
-        jsr     CHECK_AUTOSTART	;($A000)		;otherwise see if C= key is pressed, autostart if it isn't
-LFD2F:  jsr     RAMTAS		;initialize RAM constants
-        jsr     LFD52		;BASIC warm start
-        jsr     LFDF9		;Initialize I/O (set VIA registers)
-        jsr     LE518		;CINIT: set cursor color, screen address.
+        txs			;initialize stack pointer
+        cld			;disable decimal mode
+        jsr     LFD3F		; check if there is a cartridge present
+        bne     LFD2F		; if not, continue
+        jsr     CHECK_AUTOSTART	; ;otherwise see if C= key is pressed, autostart if it isn't
+LFD2F:  jsr     RAMTAS		; initialize RAM constants
+        jsr     LFD52		; BASIC warm start
+        jsr     LFDF9		; Initialize I/O (set VIA registers)
+        jsr     CINIT1          ; CINIT: set cursor color, screen address.
         cli
-        jmp     ($C000) 	;BASIC coldstart
+	jmp     BASIC_COLDSTART
 
 ;--------------------------------------
 CHECK_A_ROM:
@@ -5609,10 +5624,7 @@ LFD4C:  rts
 ; A0CBM - string to look for at start of cartridge
 ;
         .byte   $41,$30,$C3,$C2,$CD
-        ;eor     ($30,x)
-        ;.byte   $C3
-        ;.byte   $C2
-        ;.byte   $CD
+
 ;--------------------------------------
 RESTOR:
 ;KERNAL reset
@@ -5672,7 +5684,7 @@ RAMTAS:
 ; by writing two different bytes into all memory positions, starting at
 ; $0400, till it reaches the ROM (the byte read is not the same as the
 ; one you wrote.) Note that the contents of the memory is restored afterwards.
-; Finally, bottom of the memory, and top of screen-pointers are set. 
+; Finally, bottom of the memory, and top of screen-pointers are set.
 ;
 LFD8D:  lda     #$00
         tax
@@ -5683,54 +5695,51 @@ LFD90:  sta     $00,x			;fill pages 0, 2, and 3 with zeroes
         bne     LFD90			;all 256 bytes
         ldx     #$3C			;set tapebuffer to $033c
         ldy     #$03
-        stx     $B2				;variables TAPE1 is used
+        stx     $B2			;variables TAPE1 is used
         sty     $B3
-        sta     $C1				;set $C1 to 0
-        sta     $97				;set $97 to 0
+        sta     $C1			;set $C1 to 0
+        sta     $97			;set $97 to 0
         sta     $0281			;set start of memory LO to a page boundary ($xx00)
         tay
         lda     #$04			;perform memory test, starting at $0400
-        sta     $C2				;>MemoryToTest
-LFDAF:  inc     $C1				;increment byte to test
+        sta     $C2			;>MemoryToTest
+LFDAF:  inc     $C1			;increment byte to test
         bne     LFDB5
-        inc     $C2				;if rollover, increment page
+        inc     $C2			;if rollover, increment page
 LFDB5:  jsr     MEMTEST			;test the byte
         lda     $97
         beq     LFDDE 			;if zero, we haven't found RAM continue looking
         bcs     LFDAF			;if carry set, we haven't found RAM continue looking
-        ldy     $C2				;get byte to test HI
-        ldx     $C1				;byte to test LO
-        cpy     #$20			;was there RAM at $2000? 
+        ldy     $C2			;get byte to test HI
+        ldx     $C1			;byte to test LO
+        cpy     #$20			;was there RAM at $2000?
         bcc     LFDEB			;
         cpy     #$21			;was there RAM at $2100?
         bcs     CHECK_UNEXPANDED_POINTERS ;LFDD2			;yes, the system is expanded
 
 UNEXPANDED:
+	; TODO: error expansion RAM required
         ldy     #$1E			;unexpanded system: set video page to $1e00
         sty     $0288			;set video page
 LFDCF:  jmp     LFE7B			;set memory top (if carry clear) and return
 
-LFDD2:  
+LFDD2:
 EXPANDED:
-		lda     #$12			;expanded system: set start of RAM to $1200
+	lda     #>RAMSTART		;expanded system: set start of RAM to $1200
         sta     $0282			;set start of RAM
-        lda     #$10			;expanded system: set video matrix page to $1000
+	lda     #(VIRTUAL_SCREEN/256)   ;expanded system: set video matrix page
         sta     $0288			;set video page
         bne     LFDCF			;read memory top and return
-		
+
 LFDDE:  bcc     LFDAF			;if we haven't found RAM, continue testing
-        lda     $C2				;else, set start of memory HI
+        lda     $C2			;else, set start of memory HI
         sta     $0282			;set start of memory to where we found RAM
-        sta     $97				;save this position
+        sta     $97			;save this position
         cmp     #$11			;is start of memory $1100?
 LFDE9:  bcc     LFDAF			;no, continue looking
 
 LFDEB:  jsr     LE5C3			;initialize VIC registers, this code is not normally executed
         jmp     LFDEB			;keep initializing VIC registers (endless loop)
-
-;-------------------------------------
-;TAPE IRQ VECTORS (free)
-;
 
 ;--------------------------------------
 CHECK_UNEXPANDED_POINTERS:
@@ -5738,16 +5747,6 @@ CHECK_UNEXPANDED_POINTERS:
     jmp DO_CHECK_UNEXPANDED_POINTERS
 
 .res    5                       ; FREE
-
-	
-;        tay
-;        .byte   $FC
-;        .byte   $0B
-;        .byte   $FC
-;        .byte   $BF
-;        nop
-;        .byte   $8E
-;        .byte   $F9
 
 ;--------------------------------------
 INIT_IO:
@@ -5794,10 +5793,10 @@ ENABLE_TIMER:
         lda     #$26
 .ENDIF
         sta     $9124
-      
+
 .IFDEF NTSC
         lda     #$42
-.ELSE     
+.ELSE
         lda     #$48
 .ENDIF
         sta     $9125
@@ -5882,7 +5881,7 @@ MEMBOT:
 ;read/set bottom of memory
 ; The KERNAL routine MEMBOT ($ff9c) jumps to this routine. If carry is set
 ; on entry, the bottom of memory address will be loaded into (X/Y). If carry
-; is clear on entry, the bottom of memory will set according to the contents
+; is clear on entry, the bottom of memory will be set according to the contents
 ; in (X/Y)
 ;
 LFE82:  bcc     LFE8A
@@ -5896,7 +5895,7 @@ LFE8A:  stx     $0281
 MEMTEST:
 ;test memory
 ; RAMTAS calls this proc.
-; it's combined with RAMTAS in the C64 Kernal. 
+; it's combined with RAMTAS in the C64 Kernal.
 ;
 LFE91:  lda     ($C1),y
         tax
@@ -5938,7 +5937,7 @@ LFEAD:  pha                 ; store .A, .X, .Y on the stack
         jsr     LFD3F       ; check for autostart @ $A000
         bne     LFEC7       ; don't autostart, continue
         jmp     (LA002)     ; jump to warm start vector
-LFEC7:  bit     $9111       ; 
+LFEC7:  bit     $9111       ;
         jsr     LF734       ; bump clock and read keyboard
         jsr     LFFE1       ; check $91 to see if <STOP> was pressed
         bne     LFEFF       ; <STOP> not pressed, skip the following part
@@ -5947,12 +5946,12 @@ LFEC7:  bit     $9111       ;
 WARM_START_BASIC:
 ; This routine is called from the NMI routine above. If <STOP> was
 ; pressed, then KERNAL vectors are restored to default values, I/O
-; vectors initialised and a jump to ($a002), the Basic warm start vector.
+; vectors initialised and a jump to ($c002), the Basic warm start vector.
 ; The NMI routine continues at $fxxx by checking the RS232, if there is anyting to send.
 ;
         jsr     LFD52           ; KERNAL reset
         jsr     LFDF9           ; init I/O
-        jsr     LE518           ; init I/O
+        jsr     CINIT1          ; init I/O
         jmp     (LC002)         ; jump to BASIC warm start vector
 LFEDE:  lda     $911E
         ora     #$80
@@ -5995,9 +5994,9 @@ LFF2C:  txa
         bne     LFF38
 LFF38:  asl     a
         tax
-        lda     LFF5A,x
+        lda     RS232_TT-2,x
         sta     $9118
-        lda     LFF5B,x
+        lda     RS232_TT-1,x
         sta     $9119
         lda     $9110
         pla
@@ -6006,6 +6005,7 @@ LFF38:  asl     a
         sta     $911E
         ldx     $0298
         stx     $A8
+
 LFF56:  pla                     ; restore registers .Y, .X, and .A
         tay
         pla
@@ -6014,6 +6014,7 @@ LFF5A:  pla
 LFF5B:  rti                     ; back from NMI
 
 ;--------------------------------------
+RS232_TT:
 ;RS232 timing table
 ; Timing table for RS232 NMI. The table
 ; contains 10 entries which corresponds to one of the fixed RS232 rates,
@@ -6044,21 +6045,21 @@ IRQ_ENTRY:
 ; types of interrupts are processed by its own routine.
 ;
 LFF72:  pha                 ; store .A
-        txa 
+        txa
         pha                 ; store .X
         tya
         pha                 ; store .Y
         tsx
         lda     $0104,x     ; read byte on stack written by processor?
         and     #$10        ; check bit 4 to determine HW or SW interrupt
-        beq     LFF82   
+        beq     LFF82
         jmp     (L0316)     ; jump to CBINV, points to $fed2, BASIC warm start
 LFF82:  jmp     (L0314)     ; jump to CINV, points to , $eabf main IRQ entry
 
 ;--------------------------------------
 LFCDE:  lda     #$10
         jmp     LFE6A
-        
+
 ;--------------------------------------
         jmp     LFD52   ; $FF8A, RESTOR
 LFF8D:  jmp     LFD57   ; $FF8D, VECTOR
@@ -6108,4 +6109,3 @@ LFFF3:  jmp     LE500   ; $FFF3, IOBASE
 .word   $FEA9           ; NMI hardware vector
 .word   $FD22           ; system reset vector
 .word   $FF72           ; IRQ hardware vector
-
