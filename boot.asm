@@ -10,13 +10,13 @@ ESCAPE_RVS_ON = $01
 ESCAPE_RVS_OFF = $02
 STATUS_LINE = 23
 STATUS_COL  = 0
+SCREEN_H = 23
 
 .setcpu "6502"
 
-; screenbuff holds a virtual representation of the screen
-
 .BSS
 .org $2000
+; screenbuff holds a virtual representation of the screen
 screenbuff: .res 25*40
 linebuffer: .res 40
 curx: .byte 0
@@ -35,6 +35,7 @@ memstart:
 vectab:
 	.word boot
 	.word redraw
+	.word refresh
 
 ;--------------------------------------
 boot:
@@ -65,13 +66,13 @@ error:
 	cpx #@errlen
 	bne @l0
 	jmp *
-@errmsg: 
+@errmsg:
 	scrcode ">=8K MEMORY REQUIRED"
 @errlen=*-@errmsg
 
 ;--------------------------------------
 start:
-@clrdst=zp::tmp0
+@clrdst=zp::tmp2
 	clc
         lda #$10
         tay
@@ -112,7 +113,7 @@ start:
 
 ;--------------------------------------
 .export __bm_columns
-__bm_columns: 
+__bm_columns:
 .word $1100
 .word $11c0
 .word $1280
@@ -240,7 +241,7 @@ txtsrc   = $4e
         sta (txtdst),y
         iny
         cpy #8
-        bne @l1 
+        bne @l1
         pla
         tay
         clc
@@ -413,8 +414,46 @@ __text_charmap:
 .endproc
 
 ;--------------------------------------
+.proc refresh
+@src=$fb
+@row=$fd
+	txa
+	pha
+	lda #SCREEN_H-1
+	sta @row
+@l0:	lda #$00
+	sta @src+1
+	lda @row
+	sta rownum
+	asl
+	asl
+	asl
+	adc rownum
+	adc rownum
+	asl
+	rol @src+1
+	asl
+	rol @src+1
+	sta @src
+
+	lda @src+1
+	adc #>screenbuff
+	sta @src+1
+
+	lda @src
+	ldx @src+1
+	jsr _t40_puts
+	dec @row
+	bpl @l0
+	pla
+	tax
+	lda #$ff	; set N flag
+	rts
+.endproc
+
+;--------------------------------------
 .proc redraw
-@src=zp::tmp0
+@src=$fb
 	lda #$00
 	sta @src+1
 	lda $D6	; only redraw the line that the cursor is on
@@ -442,7 +481,6 @@ __text_charmap:
 
 ;--------------------------------------
 chrget:
-
 
 .export end
 end:

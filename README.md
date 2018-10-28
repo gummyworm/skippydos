@@ -17,13 +17,20 @@ methods to render to the bitmap.
 Because a bitmap is used to render the screen (by necessity, the VIC is 
 incapable of generating 4x8 characters), a RAM expansion is required to run
 this KERNAL. The VIC can only see internal RAM, so $1000-$2000 is reserved
-for this purpose.  This leaves the available RAM for the user to the space
-between $2000 and the utility cartridge at $a000.
+for this purpose.  The standard KERNAL uses the screen as the line buffer, but
+because the bitmap is meaningless to BASIC, another buffer is required to store the character codes corresponding to the current state of the bitmap.
+This buffer resides just above the framebuffer at $2000 and extends to $2400.  
+This leaves the available RAM for the user to the space
+between $2400 and the utility cartridge at $a000.  BASIC pointers are set
+accordingly.
 
-| Address    | Function |
-|------------|----------|
-|$1000-$2000 | bitmap   |
-|$2000-$a000 | user RAM |
-|$a000-$c000 | OS cart  |
-|$c000-$e000 | BASIC    |
-|$e000-$ffff | KERNAL   |
+### Memory Map
+|----------------------------|
+| Address    | Function      |
+|------------|---------------|
+|$1000-$2000 | bitmap        |
+|$2000-$2400 | screen buffer |
+|$2000-$a000 | user RAM      |
+|$a000-$c000 | OS cart       |
+|$c000-$e000 | BASIC         |
+|$e000-$ffff | KERNAL        |

@@ -13,6 +13,7 @@
 
 boot = $a000
 redraw=$a002
+refresh=$a004
 
 RAMSTART = $2413
 VIRTUAL_SCREEN = $2000
@@ -852,8 +853,8 @@ POWER_UP_MESSAGE:
 .byte " BYTES FREE",$0d,0
 POWER_UP_MESSAGE_TEXT:
 ;.byte " IFFYDOS 2012 CMD ETC",$0d,0
-.byte 1,"KIPPYDOS V1 BY BRYCE",$0d,0
-.res 8                  ; FREE
+.byte 1,"SKIPPYDOS V1 BY BRYCE",$0d,0
+.res 7                  ; FREE
 
 ;--------------------------------------
 BASSFT:
@@ -1991,17 +1992,14 @@ LEA56:  and     #$03
         ora     $0288               ; HIBASE, top of screen page
         sta     $AD                 ; store >SAL, screen scroll pointer
         jsr     LEA6E               ; synchronize color transfer
-LEA60:  ldy     #SCREEN_W           ; offset for character on screen line
+LEA60:  ldy     #SCREEN_W-1         ; offset for character on screen line
 LEA62:  lda     ($AC),y             ; move screen character
         sta     ($D1),y
-        lda     ($AE),y             ; move character color
-        ;sta     ($F3),y
-	nop
-	nop
-
+	; NOTE: character color is not moved
         dey                         ; next character
 	bpl     LEA62               ; til all characters in row are done
-        rts
+	jmp     (refresh)
+	.res 2
 
 ;--------------------------------------
 SYNCHRONIZE_COLOR_TRANSFER:
